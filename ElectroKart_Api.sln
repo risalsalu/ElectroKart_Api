@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectroKart_Api", "ElectroKart_Api\ElectroKart_Api.csproj", "{4FC81992-F3B3-4E14-8C52-E73EEDD6B348}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4FC81992-F3B3-4E14-8C52-E73EEDD6B348}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FC81992-F3B3-4E14-8C52-E73EEDD6B348}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FC81992-F3B3-4E14-8C52-E73EEDD6B348}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FC81992-F3B3-4E14-8C52-E73EEDD6B348}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {44192002-BEC0-4BEB-86C2-23F201C31432}
+	EndGlobalSection
+EndGlobal
