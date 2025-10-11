@@ -1,7 +1,7 @@
 ﻿using ElectroKart_Api.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using System.Security.Claims; // Make sure this is imported
 using System.Text;
 
 namespace ElectroKart_Api.Services.Auth
@@ -21,7 +21,10 @@ namespace ElectroKart_Api.Services.Auth
             {
                 new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Name, user.Username)
+                new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                
+                // --- ADD THIS CRITICAL LINE ---
+                new Claim(ClaimTypes.Role, user.Role)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));

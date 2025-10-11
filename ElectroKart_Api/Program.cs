@@ -1,9 +1,9 @@
 using ElectroKart_Api.Data;
 using ElectroKart_Api.Middleware;
 using ElectroKart_Api.Models;
-using ElectroKart_Api.Repositories; // <-- CORRECTED THIS
+using ElectroKart_Api.Repositories; // <-- This is the correct namespace
 using ElectroKart_Api.Repositories.Auth;
-using ElectroKart_Api.Services;     // <-- ADDED THIS
+using ElectroKart_Api.Services;
 using ElectroKart_Api.Services.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -25,7 +25,6 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-// --- ADDED THESE LINES ---
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
