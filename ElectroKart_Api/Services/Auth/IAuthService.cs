@@ -6,7 +6,7 @@ namespace ElectroKart_Api.Services.Auth
     public interface IAuthService
     {
         Task<User?> Register(RegisterDTO dto);
-        Task<User?> Login(LoginDTO dto);
+        Task<(User? user, string? token)> Login(LoginDTO dto);
         Task<List<User>> GetAllUsers();
     }
 }

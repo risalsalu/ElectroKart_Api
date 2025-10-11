@@ -1,5 +1,6 @@
 ﻿using ElectroKart_Api.DTOs;
 using ElectroKart_Api.Services.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ElectroKart_Api.Controllers
@@ -8,10 +9,10 @@ namespace ElectroKart_Api.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _userService;
-        public AuthController(IAuthService userService)
+        private readonly IAuthService _authService;
+        public AuthController(IAuthService authService)
         {
-            _userService = userService;
+            _authService = authService;
         }
 
         [HttpPost("Register")]
@@ -19,7 +20,7 @@ namespace ElectroKart_Api.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var user = await _userService.Register(dto);
+            var user = await _authService.Register(dto);
             if (user == null)
             {
                 return BadRequest(new { message = "Email already in use." });
@@ -34,20 +35,26 @@ namespace ElectroKart_Api.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var user = await _userService.Login(dto);
-            if (user == null)
+            var (user, token) = await _authService.Login(dto);
+
+            if (user == null || token == null)
             {
                 return BadRequest(new { message = "Invalid Email or Password" });
             }
 
-            var result = new { user.Id, user.Username, user.Email, user.CreatedAt };
-            return Ok(new { message = "Login successfully", user = result });
+            return Ok(new
+            {
+                message = "Login successful",
+                token,
+                user = new { user.Id, user.Username, user.Email }
+            });
         }
 
         [HttpGet("GetAllUsers")]
+        [Authorize] // This endpoint is now protected
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userService.GetAllUsers();
+            var users = await _authService.GetAllUsers();
             var sanitized = users.Select(u => new { u.Id, u.Username, u.Email, u.CreatedAt }).ToList();
             return Ok(sanitized);
         }

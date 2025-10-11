@@ -9,48 +9,40 @@ namespace ElectroKart_Api.Services.Auth
     {
         private readonly IAuthRepository _userRepository;
         private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly IJWTGenerator _jwtGenerator;
 
-        public AuthService(IAuthRepository userRepository, IPasswordHasher<User> passwordHasher)
+        public AuthService(IAuthRepository userRepository, IPasswordHasher<User> passwordHasher, IJWTGenerator jwtGenerator)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
+            _jwtGenerator = jwtGenerator;
         }
 
         public async Task<User?> Register(RegisterDTO dto)
         {
-            // Check duplicate email
             var existingUser = await _userRepository.GetUserByEmailAsync(dto.Email);
-            if (existingUser != null)
-            {
-                return null;
-            }
+            if (existingUser != null) return null;
 
-            var user = new User
-            {
-                Username = dto.Username,
-                Email = dto.Email,
-            };
-
+            var user = new User { Username = dto.Username, Email = dto.Email };
             user.Password = _passwordHasher.HashPassword(user, dto.Password);
-
             await _userRepository.AddUserAsync(user);
-
             return user;
         }
 
-        public async Task<User?> Login(LoginDTO dto)
+        public async Task<(User? user, string? token)> Login(LoginDTO dto)
         {
             var user = await _userRepository.GetUserByEmailAsync(dto.Email);
-            if (user == null) return null;
+            if (user == null) return (null, null);
 
             var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.Password, dto.Password);
 
             if (verificationResult == PasswordVerificationResult.Success)
             {
-                return user;
+                var token = _jwtGenerator.GenerateToken(user);
+                return (user, token);
             }
 
-            return null;
+            return (null, null);
         }
 
         public async Task<List<User>> GetAllUsers()

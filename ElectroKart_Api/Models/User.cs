@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ElectroKart_Api.Models
 {
@@ -19,6 +18,9 @@ namespace ElectroKart_Api.Models
 
         [Required]
         public string Password { get; set; } = string.Empty;
+
+        [Required]
+        public string Role { get; set; } = string.Empty; // <-- Make sure this is added
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
