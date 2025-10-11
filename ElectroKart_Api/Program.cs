@@ -1,5 +1,6 @@
 using ElectroKart_Api.Data;
 using ElectroKart_Api.Models;
+using ElectroKart_Api.Repositories.Auth;
 using ElectroKart_Api.Services.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,8 +14,9 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register password hasher and auth service
+// Register password hasher, repository, and auth service
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddEndpointsApiExplorer();

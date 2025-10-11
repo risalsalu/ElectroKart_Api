@@ -6,72 +6,49 @@ namespace ElectroKart_Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class HomeController : ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _userService;
-        public HomeController(IAuthService userService)
+        public AuthController(IAuthService userService)
         {
             _userService = userService;
         }
 
         [HttpPost("Register")]
-        public IActionResult Register([FromBody] RegisterDTO dto)
+        public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var user = _userService.Register(dto);
+            var user = await _userService.Register(dto);
             if (user == null)
             {
                 return BadRequest(new { message = "Email already in use." });
             }
 
-            // Return sanitized result (do not return password hash)
-            var result = new
-            {
-                user.Id,
-                user.Username,
-                user.Email,
-                user.CreatedAt
-            };
-
+            var result = new { user.Id, user.Username, user.Email, user.CreatedAt };
             return Ok(new { message = "Registered successfully", user = result });
         }
 
         [HttpPost("Login")]
-        public IActionResult Login([FromBody] LoginDTO dto)
+        public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var user = _userService.Login(dto);
+            var user = await _userService.Login(dto);
             if (user == null)
             {
                 return BadRequest(new { message = "Invalid Email or Password" });
             }
 
-            var result = new
-            {
-                user.Id,
-                user.Username,
-                user.Email,
-                user.CreatedAt
-            };
-
-            // In next step we will also return the JWT token here
+            var result = new { user.Id, user.Username, user.Email, user.CreatedAt };
             return Ok(new { message = "Login successfully", user = result });
         }
 
         [HttpGet("GetAllUsers")]
-        public IActionResult GetAllUsers()
+        public async Task<IActionResult> GetAllUsers()
         {
-            var users = _userService.GetAllUsers();
-            var sanitized = users.Select(u => new
-            {
-                u.Id,
-                u.Username,
-                u.Email,
-                u.CreatedAt
-            }).ToList();
-
+            var users = await _userService.GetAllUsers();
+            var sanitized = users.Select(u => new { u.Id, u.Username, u.Email, u.CreatedAt }).ToList();
             return Ok(sanitized);
         }
     }
