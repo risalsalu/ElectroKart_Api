@@ -17,10 +17,11 @@ namespace ElectroKart_Api.Models
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        public string Password { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty; // NOTE: Storing a hashed password is best practice.
 
+        // This property is correct and necessary.
         [Required]
-        public string Role { get; set; } = string.Empty; // <-- Make sure this is added
+        public string Role { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

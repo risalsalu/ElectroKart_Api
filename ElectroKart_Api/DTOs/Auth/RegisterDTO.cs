@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ElectroKart_Api.DTOs
+namespace ElectroKart_Api.DTOs.Auth
 {
     public class RegisterDTO
     {

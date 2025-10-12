@@ -1,9 +1,10 @@
 ﻿using ElectroKart_Api.DTOs;
+using ElectroKart_Api.DTOs.Auth;
 using ElectroKart_Api.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ElectroKart_Api.Controllers
+namespace ElectroKart_Api.Controllers.Auth
 {
     [ApiController]
     [Route("api/[controller]")]

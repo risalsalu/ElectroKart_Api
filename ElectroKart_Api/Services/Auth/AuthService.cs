@@ -1,4 +1,5 @@
 ﻿using ElectroKart_Api.DTOs;
+using ElectroKart_Api.DTOs.Auth;
 using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories.Auth;
 using Microsoft.AspNetCore.Identity;

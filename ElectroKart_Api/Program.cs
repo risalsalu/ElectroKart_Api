@@ -1,10 +1,16 @@
 using ElectroKart_Api.Data;
 using ElectroKart_Api.Middleware;
 using ElectroKart_Api.Models;
-using ElectroKart_Api.Repositories; // <-- This is the correct namespace
+using ElectroKart_Api.Repositories;
 using ElectroKart_Api.Repositories.Auth;
-using ElectroKart_Api.Services;
+using ElectroKart_Api.Repositories.Cart;
+// --- ADD THESE using statements for the Wishlist ---
+using ElectroKart_Api.Repositories.Wishlist;
+using ElectroKart_Api.Services.Wishlist;
+// ---
 using ElectroKart_Api.Services.Auth;
+using ElectroKart_Api.Services.CartServices;
+using ElectroKart_Api.Services.Products;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -21,13 +27,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register services
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-// --- CORRECTED THIS LINE ---
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICartService, CartService>();
 
+// --- ADD THESE lines to register your new Wishlist services ---
+builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+// ---
 
 // Add and Configure JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -88,13 +99,8 @@ app.UseHttpsRedirection();
 
 // Correct Middleware Order
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Register your custom middleware here
 app.UseMiddleware<RoleAuthorizationMiddleware>();
-
 app.MapControllers();
-
 app.Run();
