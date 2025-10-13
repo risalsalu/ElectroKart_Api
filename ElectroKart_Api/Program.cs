@@ -4,13 +4,13 @@ using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories;
 using ElectroKart_Api.Repositories.Auth;
 using ElectroKart_Api.Repositories.Cart;
-// --- ADD THESE using statements for the Wishlist ---
 using ElectroKart_Api.Repositories.Wishlist;
-using ElectroKart_Api.Services.Wishlist;
-// ---
 using ElectroKart_Api.Services.Auth;
 using ElectroKart_Api.Services.CartServices;
+using ElectroKart_Api.Services.Payment;     // ? Add Payment Service
 using ElectroKart_Api.Services.Products;
+using ElectroKart_Api.Services.Wishlist;
+using ElectroKart_Api.Settings;              // ? Add Razorpay Settings
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,27 +20,47 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+// ---------------------------------------------------------------------
+// DATABASE CONFIGURATION
+// ---------------------------------------------------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register services
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+// ---------------------------------------------------------------------
+// CONTROLLERS
+// ---------------------------------------------------------------------
+builder.Services.AddControllers();
+
+// ---------------------------------------------------------------------
+// CONFIGURE RAZORPAY SETTINGS
+// ---------------------------------------------------------------------
+builder.Services.Configure<RazorpaySettings>(
+    builder.Configuration.GetSection("RazorpaySettings")
+);
+
+// ---------------------------------------------------------------------
+// REPOSITORY REGISTRATION (Dependency Injection)
+// ---------------------------------------------------------------------
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(); // ? NEW
+
+// ---------------------------------------------------------------------
+// SERVICE REGISTRATION
+// ---------------------------------------------------------------------
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<ICartService, CartService>();
-
-// --- ADD THESE lines to register your new Wishlist services ---
-builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
-// ---
+builder.Services.AddScoped<IPaymentService, PaymentService>(); // ? NEW
 
-// Add and Configure JWT Authentication
+// ---------------------------------------------------------------------
+// JWT AUTHENTICATION CONFIGURATION
+// ---------------------------------------------------------------------
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -52,13 +72,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+            )
         };
     });
 
+// ---------------------------------------------------------------------
+// SWAGGER CONFIGURATION (for JWT support)
+// ---------------------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger JWT Configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -68,8 +92,9 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer",
         BearerFormat = "JWT",
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+        Description = "Enter 'Bearer {token}' to authenticate."
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -81,14 +106,19 @@ builder.Services.AddSwaggerGen(options =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
+// ---------------------------------------------------------------------
+// BUILD APP
+// ---------------------------------------------------------------------
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ---------------------------------------------------------------------
+// MIDDLEWARE CONFIGURATION
+// ---------------------------------------------------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -97,10 +127,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Correct Middleware Order
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Custom middleware (Role-based Authorization)
 app.UseMiddleware<RoleAuthorizationMiddleware>();
+
+// Map Controllers
 app.MapControllers();
+
 app.Run();

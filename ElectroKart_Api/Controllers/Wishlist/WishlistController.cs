@@ -15,7 +15,7 @@ namespace ElectroKart_Api.Controllers
 
         public WishlistController(IWishlistService wishlistService)
         {
-            _wishlistService = wishlistService;
+            _wishlistService = wishlistService; 
         }
 
         [HttpPost("add")]
