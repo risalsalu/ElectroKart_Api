@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ElectroKart_Api.Models
 {
@@ -10,7 +11,9 @@ namespace ElectroKart_Api.Models
 
         [Required]
         public int UserId { get; set; }
-        [ForeignKey("UserId")]
+
+        [ForeignKey(nameof(UserId))]
+        [JsonIgnore] // prevent circular JSON (User -> Wishlist -> User ...)
         public User? User { get; set; }
 
         public List<WishlistItem> Items { get; set; } = new();

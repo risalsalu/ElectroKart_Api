@@ -1,7 +1,6 @@
 ﻿using ElectroKart_Api.Data;
 using ElectroKart_Api.Models;
 using Microsoft.EntityFrameworkCore;
-// FIX: Add the same alias here.
 using CartModel = ElectroKart_Api.Models.Cart;
 
 namespace ElectroKart_Api.Repositories.Cart
@@ -14,43 +13,76 @@ namespace ElectroKart_Api.Repositories.Cart
             _context = context;
         }
 
-        // FIX: Use 'CartModel' as the return type.
+        // Get cart for a user including items
         public async Task<CartModel?> GetCartByUserIdAsync(int userId)
         {
             return await _context.Carts
                 .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
         }
 
-        // FIX: Use 'CartModel' for the return type and when creating a new object.
+        // Create a new cart for a user
         public async Task<CartModel> CreateCartAsync(int userId)
         {
-            var cart = new CartModel { UserId = userId }; // Use CartModel here
+            var cart = new CartModel { UserId = userId };
             await _context.Carts.AddAsync(cart);
             await _context.SaveChangesAsync();
             return cart;
         }
 
+        // Add item to cart
         public async Task AddItemToCartAsync(int cartId, int productId, int quantity)
         {
-            var cartItem = new CartItem
+            var existingItem = await _context.CartItems
+                .FirstOrDefaultAsync(i => i.CartId == cartId && i.ProductId == productId);
+
+            if (existingItem != null)
             {
-                CartId = cartId,
-                ProductId = productId,
-                Quantity = quantity
-            };
-            await _context.CartItems.AddAsync(cartItem);
+                existingItem.Quantity += quantity;
+            }
+            else
+            {
+                var cartItem = new CartItem
+                {
+                    CartId = cartId,
+                    ProductId = productId,
+                    Quantity = quantity
+                };
+                await _context.CartItems.AddAsync(cartItem);
+            }
+
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateItemQuantityAsync(int itemId, int newQuantity)
+        // Update quantity of a cart item
+        public async Task<bool> UpdateItemQuantityAsync(int itemId, int newQuantity)
         {
             var item = await _context.CartItems.FindAsync(itemId);
-            if (item != null)
+            if (item == null) return false;
+
+            if (newQuantity <= 0)
+            {
+                _context.CartItems.Remove(item); // Remove item if quantity <= 0
+            }
+            else
             {
                 item.Quantity = newQuantity;
-                await _context.SaveChangesAsync();
             }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // Remove an item from the cart
+        public async Task<bool> RemoveItemFromCartAsync(int itemId)
+        {
+            var item = await _context.CartItems.FindAsync(itemId);
+            if (item == null) return false;
+
+            _context.CartItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

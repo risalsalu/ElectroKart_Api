@@ -1,19 +1,23 @@
 ﻿using ElectroKart_Api.Models;
-// FIX: Create a nickname 'CartModel' for your actual Cart model to avoid name conflict.
 using CartModel = ElectroKart_Api.Models.Cart;
 
 namespace ElectroKart_Api.Repositories.Cart
 {
     public interface ICartRepository
     {
-        // FIX: Use the 'CartModel' nickname for the return type.
+        // Get the cart for a user
         Task<CartModel?> GetCartByUserIdAsync(int userId);
 
-        // FIX: Use the 'CartModel' nickname here as well.
+        // Create a new cart for a user
         Task<CartModel> CreateCartAsync(int userId);
 
+        // Add an item to a cart
         Task AddItemToCartAsync(int cartId, int productId, int quantity);
 
-        Task UpdateItemQuantityAsync(int itemId, int newQuantity);
+        // Update the quantity of a cart item
+        Task<bool> UpdateItemQuantityAsync(int itemId, int newQuantity);
+
+        // Remove an item from the cart
+        Task<bool> RemoveItemFromCartAsync(int itemId);
     }
 }
