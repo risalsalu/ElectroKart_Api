@@ -1,5 +1,5 @@
 ﻿using ElectroKart_Api.Attributes;
-using ElectroKart_Api.DTOs.Products; // <-- ADD THIS
+using ElectroKart_Api.DTOs.Products;
 using ElectroKart_Api.Services.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,19 +20,13 @@ namespace ElectroKart_Api.Controllers.Products
         [HttpPost]
         [Authorize]
         [AuthorizeRole("Admin")]
-        // --- FIX: Use CreateProductDto for input ---
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto productDto)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var createdProduct = await _productService.CreateProductAsync(productDto);
-
-            // Fetch the DTO version to return a consistent response
             var productToReturn = await _productService.GetProductByIdAsync(createdProduct.Id);
-
             return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, productToReturn);
         }
 
@@ -55,6 +49,14 @@ namespace ElectroKart_Api.Controllers.Products
         public async Task<IActionResult> GetProductsByCategory(int categoryId)
         {
             var products = await _productService.GetProductsByCategoryIdAsync(categoryId);
+            return Ok(products);
+        }
+
+        // --- NEW SEARCH ENDPOINT ---
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchDto searchDto)
+        {
+            var products = await _productService.SearchProductsAsync(searchDto);
             return Ok(products);
         }
     }

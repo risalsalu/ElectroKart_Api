@@ -1,6 +1,7 @@
 ﻿using ElectroKart_Api.Data;
 using ElectroKart_Api.Models;
 using Microsoft.EntityFrameworkCore;
+using ElectroKart_Api.DTOs.Products;
 
 namespace ElectroKart_Api.Repositories
 {
@@ -22,10 +23,11 @@ namespace ElectroKart_Api.Repositories
 
         public async Task<List<Product>> GetAllAsync()
         {
-            return await _context.Products.Include(p => p.Category).ToListAsync();
+            return await _context.Products
+                .Include(p => p.Category)
+                .ToListAsync();
         }
 
-        // --- ADD THIS METHOD IMPLEMENTATION ---
         public async Task<Product?> GetByIdAsync(int id)
         {
             return await _context.Products
@@ -33,13 +35,42 @@ namespace ElectroKart_Api.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        // --- ADD THIS METHOD IMPLEMENTATION ---
         public async Task<List<Product>> GetByCategoryIdAsync(int categoryId)
         {
             return await _context.Products
                 .Where(p => p.CategoryId == categoryId)
                 .Include(p => p.Category)
                 .ToListAsync();
+        }
+
+        public async Task<List<Product>> SearchProductsAsync(ProductSearchDto searchDto)
+        {
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchDto.Query))
+            {
+                query = query.Where(p => p.Name.Contains(searchDto.Query) ||
+                                         p.Description.Contains(searchDto.Query));
+            }
+
+            if (searchDto.CategoryId.HasValue)
+            {
+                query = query.Where(p => p.CategoryId == searchDto.CategoryId.Value);
+            }
+
+            if (searchDto.MinPrice.HasValue)
+            {
+                query = query.Where(p => p.Price >= searchDto.MinPrice.Value);
+            }
+
+            if (searchDto.MaxPrice.HasValue)
+            {
+                query = query.Where(p => p.Price <= searchDto.MaxPrice.Value);
+            }
+
+            return await query.ToListAsync();
         }
     }
 }

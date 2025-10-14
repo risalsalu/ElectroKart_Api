@@ -15,7 +15,6 @@ namespace ElectroKart_Api.Services.Products
 
         public async Task<Product> CreateProductAsync(CreateProductDto productDto)
         {
-            // Map the DTO to the Product model
             var product = new Product
             {
                 Name = productDto.Name,
@@ -31,42 +30,32 @@ namespace ElectroKart_Api.Services.Products
         public async Task<List<ProductDto>> GetAllProductsAsync()
         {
             var products = await _productRepository.GetAllAsync();
-
-            // Map the list of Product models to a list of ProductDto
-            return products.Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                ImageUrl = p.ImageUrl,
-                CategoryName = p.Category?.Name ?? "N/A"
-            }).ToList();
+            return products.Select(MapToDto).ToList();
         }
 
         public async Task<ProductDto?> GetProductByIdAsync(int id)
         {
             var product = await _productRepository.GetByIdAsync(id);
-            if (product == null) return null;
-
-            // Map the Product model to a ProductDto
-            return new ProductDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                ImageUrl = product.ImageUrl,
-                CategoryName = product.Category?.Name ?? "N/A"
-            };
+            return product == null ? null : MapToDto(product);
         }
 
         public async Task<List<ProductDto>> GetProductsByCategoryIdAsync(int categoryId)
         {
             var products = await _productRepository.GetByCategoryIdAsync(categoryId);
+            return products.Select(MapToDto).ToList();
+        }
 
-            // Map the list of Product models to a list of ProductDto
-            return products.Select(p => new ProductDto
+        // --- New search/filter method ---
+        public async Task<List<ProductDto>> SearchProductsAsync(ProductSearchDto searchDto)
+        {
+            var products = await _productRepository.SearchProductsAsync(searchDto);
+            return products.Select(MapToDto).ToList();
+        }
+
+        // --- Helper method to map Product to ProductDto ---
+        private ProductDto MapToDto(Product p)
+        {
+            return new ProductDto
             {
                 Id = p.Id,
                 Name = p.Name,
@@ -74,7 +63,7 @@ namespace ElectroKart_Api.Services.Products
                 Price = p.Price,
                 ImageUrl = p.ImageUrl,
                 CategoryName = p.Category?.Name ?? "N/A"
-            }).ToList();
+            };
         }
     }
 }

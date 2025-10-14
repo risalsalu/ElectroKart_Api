@@ -15,6 +15,8 @@ namespace ElectroKart_Api.Data
         public DbSet<Wishlist> Wishlists { get; set; } = null!;
         public DbSet<WishlistItem> WishlistItems { get; set; } = null!;
         public DbSet<Payment> Payments { get; set; } = null!;
+        public DbSet<Order> Orders { get; set; } = null!; // NEW
+        public DbSet<OrderItem> OrderItems { get; set; } = null!; // NEW
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,7 +28,7 @@ namespace ElectroKart_Api.Data
                 entity.HasKey(p => p.Id);
 
                 entity.Property(p => p.Amount)
-                      .HasColumnType("decimal(18,2)") // fix for EF Core warning
+                      .HasColumnType("decimal(18,2)")
                       .IsRequired();
 
                 entity.Property(p => p.Currency)
@@ -47,7 +49,26 @@ namespace ElectroKart_Api.Data
                       .HasDefaultValueSql("GETDATE()");
             });
 
-            // Optionally, configure other entities here as needed
+            // Configure Order & OrderItem relationships
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.TotalAmount)
+                      .HasColumnType("decimal(18,2)")
+                      .IsRequired();
+                entity.HasMany(o => o.Items)
+                      .WithOne(i => i.Order)
+                      .HasForeignKey(i => i.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.HasKey(oi => oi.Id);
+                entity.Property(oi => oi.Price)
+                      .HasColumnType("decimal(18,2)")
+                      .IsRequired();
+            });
         }
     }
 }
