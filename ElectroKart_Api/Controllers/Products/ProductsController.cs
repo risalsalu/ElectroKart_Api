@@ -1,5 +1,6 @@
-﻿using ElectroKart_Api.Attributes;
-using ElectroKart_Api.DTOs.Products;
+﻿using ElectroKart_Api.DTOs.Products;
+using ElectroKart_Api.Models;
+using ElectroKart_Api.Services;
 using ElectroKart_Api.Services.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,25 +12,38 @@ namespace ElectroKart_Api.Controllers.Products
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ProductsController(IProductService productService)
+        public ProductsController(IProductService productService, ICloudinaryService cloudinaryService)
         {
             _productService = productService;
+            _cloudinaryService = cloudinaryService;
         }
 
+        // CREATE PRODUCT with optional image upload
         [HttpPost]
         [Authorize]
         [AuthorizeRole("Admin")]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto productDto)
+        public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto productDto, IFormFile? imageFile)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                // Upload image to Cloudinary
+                var uploadResult = await _cloudinaryService.UploadImageAsync(imageFile);
+                productDto.ImageUrl = uploadResult.SecureUrl.ToString();
+                productDto.ImagePublicId = uploadResult.PublicId;
+            }
+
             var createdProduct = await _productService.CreateProductAsync(productDto);
             var productToReturn = await _productService.GetProductByIdAsync(createdProduct.Id);
+
             return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, productToReturn);
         }
 
+        // GET ALL PRODUCTS
         [HttpGet]
         public async Task<IActionResult> GetAllProducts()
         {
@@ -37,6 +51,7 @@ namespace ElectroKart_Api.Controllers.Products
             return Ok(products);
         }
 
+        // GET PRODUCT BY ID
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetProductById(int id)
         {
@@ -45,6 +60,7 @@ namespace ElectroKart_Api.Controllers.Products
             return Ok(product);
         }
 
+        // GET PRODUCTS BY CATEGORY
         [HttpGet("category/{categoryId:int}")]
         public async Task<IActionResult> GetProductsByCategory(int categoryId)
         {
@@ -52,7 +68,7 @@ namespace ElectroKart_Api.Controllers.Products
             return Ok(products);
         }
 
-        // --- NEW SEARCH ENDPOINT ---
+        // SEARCH PRODUCTS
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchDto searchDto)
         {

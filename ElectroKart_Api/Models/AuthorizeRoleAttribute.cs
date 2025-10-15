@@ -1,4 +1,4 @@
-﻿namespace ElectroKart_Api.Attributes
+﻿namespace ElectroKart_Api.Models
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class AuthorizeRoleAttribute : Attribute

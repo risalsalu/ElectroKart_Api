@@ -18,9 +18,9 @@ namespace ElectroKart_Api.Models
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Price { get; set; }
 
-        public string ImageUrl { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }        
+        public string? ImagePublicId { get; set; }  
 
-        // Foreign Key Relationship
         public int CategoryId { get; set; }
         public Category? Category { get; set; }
     }

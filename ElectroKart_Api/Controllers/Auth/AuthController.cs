@@ -36,23 +36,36 @@ namespace ElectroKart_Api.Controllers.Auth
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var (user, token) = await _authService.Login(dto);
+            var loginResponse = await _authService.Login(dto);
 
-            if (user == null || token == null)
+            if (loginResponse == null)
             {
                 return BadRequest(new { message = "Invalid Email or Password" });
             }
 
-            return Ok(new
+            return Ok(loginResponse);
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] TokenRequestDto tokenRequestDto)
+        {
+            if (tokenRequestDto is null)
             {
-                message = "Login successful",
-                token,
-                user = new { user.Id, user.Username, user.Email }
-            });
+                return BadRequest("Invalid client request");
+            }
+
+            var newTokens = await _authService.RefreshTokenAsync(tokenRequestDto);
+
+            if (newTokens is null)
+            {
+                return Unauthorized("Invalid tokens");
+            }
+
+            return Ok(newTokens);
         }
 
         [HttpGet("GetAllUsers")]
-        [Authorize] // This endpoint is now protected
+        [Authorize]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _authService.GetAllUsers();

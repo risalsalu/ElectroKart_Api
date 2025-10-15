@@ -4,11 +4,12 @@ using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories;
 using ElectroKart_Api.Repositories.Auth;
 using ElectroKart_Api.Repositories.Cart;
-using ElectroKart_Api.Repositories.Orders;        // <-- Added
+using ElectroKart_Api.Repositories.Orders;
 using ElectroKart_Api.Repositories.Wishlist;
+using ElectroKart_Api.Services;
 using ElectroKart_Api.Services.Auth;
 using ElectroKart_Api.Services.CartServices;
-using ElectroKart_Api.Services.Orders;           // <-- Added
+using ElectroKart_Api.Services.Orders;
 using ElectroKart_Api.Services.Payment;
 using ElectroKart_Api.Services.Products;
 using ElectroKart_Api.Services.Wishlist;
@@ -22,12 +23,21 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ------------------------- Database -------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 
+// ------------------------- Controllers -------------------------
 builder.Services.AddControllers();
+
+// ------------------------- App Settings -------------------------
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("RazorpaySettings")
+);
+
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings")
 );
 
 // ------------------------- Repositories -------------------------
@@ -36,8 +46,7 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();    // <-- Added
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // ------------------------- Services -------------------------
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -47,7 +56,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IOrderService, OrderService>();          // <-- Added
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 // ------------------------- JWT Authentication -------------------------
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -67,8 +77,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// ------------------------- Swagger -------------------------
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -99,6 +109,7 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// ------------------------- Middleware Pipeline -------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
