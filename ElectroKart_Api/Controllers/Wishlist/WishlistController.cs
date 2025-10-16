@@ -8,7 +8,7 @@ namespace ElectroKart_Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "User")] // Only users can access
+    [Authorize(Roles = "User")]
     public class WishlistController : ControllerBase
     {
         private readonly IWishlistService _wishlistService;

@@ -6,15 +6,10 @@ namespace ElectroKart_Api.Repositories.Wishlist
     public interface IWishlistRepository
     {
         Task<WishlistModel?> GetWishlistByUserIdAsync(int userId);
-
         Task<WishlistModel> CreateWishlistAsync(int userId);
-
         Task AddItemAsync(int wishlistId, int productId);
-
         Task<bool> ItemExistsAsync(int wishlistId, int productId);
-
         Task<IEnumerable<WishlistItem>> GetAllWishlistItemsAsync(int userId);
-
         Task<bool> DeleteWishlistItemAsync(int itemId);
     }
 }

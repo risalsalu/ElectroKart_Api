@@ -44,15 +44,11 @@ namespace ElectroKart_Api.Services.Products
             var products = await _productRepository.GetByCategoryIdAsync(categoryId);
             return products.Select(MapToDto).ToList();
         }
-
-        // --- New search/filter method ---
         public async Task<List<ProductDto>> SearchProductsAsync(ProductSearchDto searchDto)
         {
             var products = await _productRepository.SearchProductsAsync(searchDto);
             return products.Select(MapToDto).ToList();
         }
-
-        // --- Helper method to map Product to ProductDto ---
         private ProductDto MapToDto(Product p)
         {
             return new ProductDto

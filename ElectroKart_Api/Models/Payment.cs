@@ -1,25 +1,35 @@
-﻿using System;
+﻿using ElectroKart_Api.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ElectroKart_Api.Models
+public class Payment
 {
-    public class Payment
-    {
-        [Key]
-        public int Id { get; set; }
+    [Key]
+    public int Id { get; set; }
 
-        [Required]
-        public string OrderId { get; set; } = string.Empty;
+    [Required, MaxLength(100)]
+    public string PaymentId { get; set; } = string.Empty;
 
-        public string? PaymentId { get; set; }
+    [Required, MaxLength(100)]
+    public string OrderId { get; set; } = string.Empty;
 
-        public string? Signature { get; set; }
 
-        public decimal Amount { get; set; }
+    [Required, MaxLength(100)]
+    public string OrderReference { get; set; } = string.Empty;
 
-        public string Status { get; set; } = "Created";
+    [Required, Column(TypeName = "decimal(18,2)")]
+    public decimal Amount { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string Currency { get; internal set; } = string.Empty;
-    }
+    [Required, MaxLength(10)]
+    public string Currency { get; set; } = "INR";
+
+    [Required, MaxLength(50)]
+    public string Status { get; set; } = "Pending";
+
+    public int UserId { get; set; }
+    public User? User { get; set; }
+
+    public string? Description { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

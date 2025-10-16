@@ -8,12 +8,12 @@ namespace ElectroKart_Api.Repositories.Cart
     public class CartRepository : ICartRepository
     {
         private readonly AppDbContext _context;
+
         public CartRepository(AppDbContext context)
         {
             _context = context;
         }
 
-        // Get cart for a user including items
         public async Task<CartModel?> GetCartByUserIdAsync(int userId)
         {
             return await _context.Carts
@@ -22,7 +22,6 @@ namespace ElectroKart_Api.Repositories.Cart
                 .FirstOrDefaultAsync(c => c.UserId == userId);
         }
 
-        // Create a new cart for a user
         public async Task<CartModel> CreateCartAsync(int userId)
         {
             var cart = new CartModel { UserId = userId };
@@ -31,9 +30,13 @@ namespace ElectroKart_Api.Repositories.Cart
             return cart;
         }
 
-        // Add item to cart
         public async Task AddItemToCartAsync(int cartId, int productId, int quantity)
         {
+            // ✅ Ensure product exists to avoid FK violation
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null)
+                throw new Exception("Product does not exist.");
+
             var existingItem = await _context.CartItems
                 .FirstOrDefaultAsync(i => i.CartId == cartId && i.ProductId == productId);
 
@@ -55,7 +58,6 @@ namespace ElectroKart_Api.Repositories.Cart
             await _context.SaveChangesAsync();
         }
 
-        // Update quantity of a cart item
         public async Task<bool> UpdateItemQuantityAsync(int itemId, int newQuantity)
         {
             var item = await _context.CartItems.FindAsync(itemId);
@@ -63,7 +65,7 @@ namespace ElectroKart_Api.Repositories.Cart
 
             if (newQuantity <= 0)
             {
-                _context.CartItems.Remove(item); // Remove item if quantity <= 0
+                _context.CartItems.Remove(item);
             }
             else
             {
@@ -74,13 +76,23 @@ namespace ElectroKart_Api.Repositories.Cart
             return true;
         }
 
-        // Remove an item from the cart
         public async Task<bool> RemoveItemFromCartAsync(int itemId)
         {
             var item = await _context.CartItems.FindAsync(itemId);
             if (item == null) return false;
 
             _context.CartItems.Remove(item);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ClearCartAsync(int cartId)
+        {
+            var items = _context.CartItems.Where(i => i.CartId == cartId);
+
+            if (!await items.AnyAsync()) return false;
+
+            _context.CartItems.RemoveRange(items);
             await _context.SaveChangesAsync();
             return true;
         }

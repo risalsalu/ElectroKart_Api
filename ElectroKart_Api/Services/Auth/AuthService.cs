@@ -60,17 +60,15 @@ namespace ElectroKart_Api.Services.Auth
 
         public async Task<LoginResponseDto?> RefreshTokenAsync(TokenRequestDto tokenRequestDto)
         {
-            // --- THIS SECTION HAS BEEN CHANGED ---
             var principal = _jwtGenerator.GetPrincipalFromExpiredToken(tokenRequestDto.AccessToken);
             var userIdString = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                return null; // Invalid token or user ID
+                return null;
             }
 
             var user = await _userRepository.GetUserByIdAsync(userId);
-            // --- END OF CHANGES ---
 
             if (user is null || user.RefreshToken != tokenRequestDto.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             {

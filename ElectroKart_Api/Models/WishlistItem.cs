@@ -13,7 +13,7 @@ namespace ElectroKart_Api.Models
         public int WishlistId { get; set; }
 
         [ForeignKey(nameof(WishlistId))]
-        [JsonIgnore] // prevent circular reference (Wishlist -> Items -> Wishlist ...)
+        [JsonIgnore]
         public Wishlist? Wishlist { get; set; }
 
         [Required]

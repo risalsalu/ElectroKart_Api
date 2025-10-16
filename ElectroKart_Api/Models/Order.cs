@@ -1,27 +1,38 @@
-﻿    using System.ComponentModel.DataAnnotations;
-    using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-    namespace ElectroKart_Api.Models
+namespace ElectroKart_Api.Models
+{
+    public class Order
     {
-        public class Order
-        {
-            [Key]
-            public int Id { get; set; }
+        [Key]
+        public int Id { get; set; }
 
-            [Required]
-            public int UserId { get; set; }
-            [ForeignKey("UserId")]
-            public User? User { get; set; }
+        [Required]
+        public int UserId { get; set; }
 
-            [Required]
-            public decimal TotalAmount { get; set; }
+        [ForeignKey("UserId")]
+        public User? User { get; set; }
 
-            [Required]
-            [MaxLength(50)]
-            public string Status { get; set; } = "Pending"; // Pending, Completed, Cancelled, etc.
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalAmount { get; set; }
 
-            public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [Required]
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
-            public List<OrderItem> Items { get; set; } = new();
-        }
+        [Required]
+        [MaxLength(200)]
+        public string ShippingAddress { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(50)]
+        public string PaymentMethod { get; set; } = "COD";
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public List<OrderItem> Items { get; set; } = new();
     }
+}

@@ -1,12 +1,13 @@
 ﻿using ElectroKart_Api.Models;
 using System.Threading.Tasks;
 
-namespace ElectroKart_Api.Repositories
+namespace ElectroKart_Api.Repositories.Payments
 {
     public interface IPaymentRepository
     {
-        Task AddPaymentAsync(Payment payment);
-        Task<Payment?> GetByOrderIdAsync(string orderId);
-        Task UpdateStatusAsync(string orderId, string status, string? paymentId = null, string? signature = null);
+        Task<Payment> CreatePaymentAsync(Payment payment);
+        Task<Payment?> GetPaymentByPaymentIdAsync(string paymentId);
+        Task<Payment?> GetPaymentByOrderIdAsync(int orderId);
+        Task UpdatePaymentStatusAsync(Payment payment, string status);
     }
 }

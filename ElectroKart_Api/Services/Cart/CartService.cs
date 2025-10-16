@@ -1,20 +1,28 @@
-﻿using ElectroKart_Api.Models;
+﻿using ElectroKart_Api.Data;
+using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories.Cart;
+using Microsoft.EntityFrameworkCore;
 
 namespace ElectroKart_Api.Services.CartServices
 {
     public class CartService : ICartService
     {
         private readonly ICartRepository _cartRepository;
+        private readonly AppDbContext _context;
 
-        public CartService(ICartRepository cartRepository)
+        public CartService(ICartRepository cartRepository, AppDbContext context)
         {
             _cartRepository = cartRepository;
+            _context = context;
         }
 
-        // Add a product to the cart
         public async Task AddToCartAsync(int userId, int productId, int quantity)
         {
+            // ✅ Ensure product exists to prevent FK issues
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null)
+                throw new Exception("Product does not exist.");
+
             var cart = await _cartRepository.GetCartByUserIdAsync(userId)
                        ?? await _cartRepository.CreateCartAsync(userId);
 
@@ -30,7 +38,6 @@ namespace ElectroKart_Api.Services.CartServices
             }
         }
 
-        // Update the quantity of a cart item
         public async Task<bool> UpdateCartItemQuantityAsync(int userId, int itemId, int newQuantity)
         {
             var cart = await _cartRepository.GetCartByUserIdAsync(userId);
@@ -39,7 +46,6 @@ namespace ElectroKart_Api.Services.CartServices
             return await _cartRepository.UpdateItemQuantityAsync(itemId, newQuantity);
         }
 
-        // Remove an item from the cart
         public async Task<bool> RemoveFromCartAsync(int userId, int itemId)
         {
             var cart = await _cartRepository.GetCartByUserIdAsync(userId);
@@ -48,10 +54,17 @@ namespace ElectroKart_Api.Services.CartServices
             return await _cartRepository.RemoveItemFromCartAsync(itemId);
         }
 
-        // Get the cart for a specific user
         public async Task<Cart?> GetCartByUserAsync(int userId)
         {
             return await _cartRepository.GetCartByUserIdAsync(userId);
+        }
+
+        public async Task<bool> ClearCartAsync(int userId)
+        {
+            var cart = await _cartRepository.GetCartByUserIdAsync(userId);
+            if (cart == null) return false;
+
+            return await _cartRepository.ClearCartAsync(cart.Id);
         }
     }
 }

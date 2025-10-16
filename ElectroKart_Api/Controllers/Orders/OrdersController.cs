@@ -1,11 +1,16 @@
 ﻿using ElectroKart_Api.DTOs.Orders;
 using ElectroKart_Api.Services.Orders;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Controllers.Orders
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -15,36 +20,77 @@ namespace ElectroKart_Api.Controllers.Orders
             _orderService = orderService;
         }
 
-        // POST: api/Orders/{userId}
-        [HttpPost("{userId}")]
-        public async Task<IActionResult> CreateOrder(int userId, [FromBody] OrderDto orderDto)
+        [HttpPost("checkout")]
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequestDto dto)
         {
-            if (orderDto == null || orderDto.Items == null || !orderDto.Items.Any())
+            if (dto == null || dto.Items == null || !dto.Items.Any())
                 return BadRequest("Order must have at least one item.");
 
-            var createdOrder = await _orderService.CreateOrderAsync(userId, orderDto);
-            return CreatedAtAction(nameof(GetOrderById), new { orderId = createdOrder.Id }, createdOrder);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim.Value);
+
+            var createdOrder = await _orderService.CreateOrderAsync(userId, dto);
+
+            return CreatedAtAction(
+                nameof(GetOrderById),
+                new { orderId = $"order_{createdOrder.OrderId}" }, // pass string format
+                createdOrder
+            );
         }
 
-        // GET: api/Orders/user/{userId}
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetOrdersByUserId(int userId)
+        [HttpGet("my-orders")]
+        public async Task<IActionResult> GetOrdersByUserId()
         {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim.Value);
             var orders = await _orderService.GetOrdersByUserIdAsync(userId);
+
             if (orders == null || !orders.Any())
                 return NotFound("No orders found for this user.");
 
             return Ok(orders);
         }
 
-        // GET: api/Orders/{orderId}
         [HttpGet("{orderId}")]
-        public async Task<IActionResult> GetOrderById(int orderId)
+        public async Task<IActionResult> GetOrderById(string orderId) // string instead of int
         {
-            var order = await _orderService.GetOrderByIdAsync(orderId);
-            if (order == null) return NotFound("Order not found.");
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim.Value);
+
+            var order = await _orderService.GetOrderByIdAsync(orderId, userId); // pass string
+
+            if (order == null)
+                return NotFound("Order not found.");
 
             return Ok(order);
+        }
+
+        [HttpPatch("{orderId}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateOrderStatus(string orderId, [FromBody] string status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+                return BadRequest("Status is required.");
+
+            // Admin updates, no userId check (pass 0)
+            var success = await _orderService.UpdateOrderStatusAsync(orderId, 0, status); // orderId string
+
+            if (!success)
+                return BadRequest("Failed to update order status.");
+
+            return NoContent();
         }
     }
 }

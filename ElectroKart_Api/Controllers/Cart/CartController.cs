@@ -30,7 +30,6 @@ namespace ElectroKart_Api.Controllers.Cart
             if (cart == null || cart.Items == null || !cart.Items.Any())
                 return Ok(new { message = "Cart is empty." });
 
-            // Break the circular reference
             foreach (var item in cart.Items)
             {
                 item.Cart = null;
@@ -57,7 +56,6 @@ namespace ElectroKart_Api.Controllers.Cart
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
                 return Unauthorized("User ID claim not found or invalid.");
 
-            // ✅ Await the Task before using ! operator
             var updated = await _cartService.UpdateCartItemQuantityAsync(userId, itemId, cartItemDto.Quantity);
             if (!updated) return NotFound("Cart item not found.");
 
@@ -71,11 +69,20 @@ namespace ElectroKart_Api.Controllers.Cart
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
                 return Unauthorized("User ID claim not found or invalid.");
 
-            // ✅ Await the Task before using ! operator
             var removed = await _cartService.RemoveFromCartAsync(userId, itemId);
             if (!removed) return NotFound("Cart item not found.");
 
             return Ok(new { message = "Cart item removed successfully." });
+        }
+        [HttpDelete("clear")]
+        public async Task<IActionResult> ClearCart()
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+                return Unauthorized("User ID claim not found or invalid.");
+            var cleared = await _cartService.ClearCartAsync(userId);
+            if (!cleared) return NotFound("Cart not found or already empty.");
+            return Ok(new { message = "Cart cleared successfully." });
         }
     }
 }

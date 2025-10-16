@@ -20,7 +20,6 @@ namespace ElectroKart_Api.Controllers.Products
             _cloudinaryService = cloudinaryService;
         }
 
-        // CREATE PRODUCT with optional image upload
         [HttpPost]
         [Authorize]
         [AuthorizeRole("Admin")]
@@ -31,7 +30,6 @@ namespace ElectroKart_Api.Controllers.Products
 
             if (imageFile != null && imageFile.Length > 0)
             {
-                // Upload image to Cloudinary
                 var uploadResult = await _cloudinaryService.UploadImageAsync(imageFile);
                 productDto.ImageUrl = uploadResult.SecureUrl.ToString();
                 productDto.ImagePublicId = uploadResult.PublicId;
@@ -43,7 +41,6 @@ namespace ElectroKart_Api.Controllers.Products
             return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, productToReturn);
         }
 
-        // GET ALL PRODUCTS
         [HttpGet]
         public async Task<IActionResult> GetAllProducts()
         {
@@ -51,7 +48,6 @@ namespace ElectroKart_Api.Controllers.Products
             return Ok(products);
         }
 
-        // GET PRODUCT BY ID
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetProductById(int id)
         {
@@ -60,7 +56,6 @@ namespace ElectroKart_Api.Controllers.Products
             return Ok(product);
         }
 
-        // GET PRODUCTS BY CATEGORY
         [HttpGet("category/{categoryId:int}")]
         public async Task<IActionResult> GetProductsByCategory(int categoryId)
         {
@@ -68,7 +63,6 @@ namespace ElectroKart_Api.Controllers.Products
             return Ok(products);
         }
 
-        // SEARCH PRODUCTS
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchDto searchDto)
         {

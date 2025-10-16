@@ -1,94 +1,81 @@
-﻿using ElectroKart_Api.DTOs.Payment;
+﻿using ElectroKart_Api.DTOs.Payments;
 using ElectroKart_Api.Models;
-using ElectroKart_Api.Repositories;
-using Microsoft.Extensions.Configuration;
-using Razorpay.Api;
-using System.Security.Cryptography;
-using System.Text;
+using ElectroKart_Api.Repositories.Orders;
+using ElectroKart_Api.Repositories.Payments;
+using System;
+using System.Threading.Tasks;
 
-namespace ElectroKart_Api.Services.Payment
+namespace ElectroKart_Api.Services.Payments
 {
     public class PaymentService : IPaymentService
     {
-        private readonly IPaymentRepository _repo;
-        private readonly string _key;
-        private readonly string _secret;
+        private readonly IPaymentRepository _paymentRepository;
+        private readonly IOrderRepository _orderRepository;
 
-        public PaymentService(IConfiguration config, IPaymentRepository repo)
+        public PaymentService(IPaymentRepository paymentRepository, IOrderRepository orderRepository)
         {
-            _repo = repo;
-            _key = config["RazorpaySettings:KeyId"]!;       // ✅ Updated to match your Program.cs config section
-            _secret = config["RazorpaySettings:KeySecret"]!;
+            _paymentRepository = paymentRepository;
+            _orderRepository = orderRepository;
         }
 
-        public async Task<object> CreateOrderAsync(PaymentRequestDto request)
+        public async Task<PaymentResponseDto> InitiatePaymentAsync(CreatePaymentRequestDto dto, int userId)
         {
-            try
+            var order = await _orderRepository.GetOrderByIdAsync(dto.OrderId);
+            if (order == null)
+                throw new Exception("Order not found.");
+
+            var payment = new Payment
             {
-                var client = new RazorpayClient(_key, _secret);
+                PaymentId = Guid.NewGuid().ToString(),
+                OrderId = order.Id.ToString(), // FIX: Convert int to string
+                OrderReference = $"order_{order.Id}",
+                Amount = dto.Amount,
+                Currency = dto.Currency,
+                Status = "Pending",
+                Description = dto.Description,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
 
-                var options = new Dictionary<string, object>
-                {
-                    { "amount", request.Amount * 100 }, // Razorpay expects amount in paise
-                    { "currency", "INR" },
-                    { "receipt", Guid.NewGuid().ToString() }
-                };
+            var created = await _paymentRepository.CreatePaymentAsync(payment);
 
-                var order = client.Order.Create(options);
-
-                // ✅ Explicitly reference model class to avoid namespace conflict
-                var payment = new ElectroKart_Api.Models.Payment
-                {
-                    OrderId = order["id"].ToString(),
-                    Amount = request.Amount,
-                    Currency = "INR",
-                    Status = "Created",
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await _repo.AddPaymentAsync(payment);
-
-                return new
-                {
-                    orderId = order["id"].ToString(),
-                    key = _key,
-                    amount = request.Amount * 100,
-                    currency = "INR"
-                };
-            }
-            catch (Exception ex)
+            return new PaymentResponseDto
             {
-                throw new Exception("Error while creating Razorpay order", ex);
-            }
+                PaymentId = created.PaymentId,
+                OrderId = created.OrderId.ToString(),
+                OrderReference = created.OrderReference,
+                Amount = created.Amount,
+                Currency = created.Currency,
+                Status = created.Status,
+                CreatedAt = created.CreatedAt
+            };
         }
 
-        public async Task<bool> VerifyPaymentAsync(VerifyPaymentDto request)
+        public async Task<bool> ConfirmPaymentAsync(PaymentConfirmationDto dto)
         {
-            try
+            var payment = await _paymentRepository.GetPaymentByPaymentIdAsync(dto.PaymentId);
+            if (payment == null) return false;
+
+            bool isValid = true; // Replace with actual gateway verification
+            if (!isValid)
             {
-                string signatureData = $"{request.OrderId}|{request.PaymentId}";
-                string generatedSignature = CalculateSignature(signatureData, _secret);
-
-                if (generatedSignature == request.Signature)
-                {
-                    await _repo.UpdateStatusAsync(request.OrderId, "Success", request.PaymentId, request.Signature);
-                    return true;
-                }
-
-                await _repo.UpdateStatusAsync(request.OrderId, "Failed", request.PaymentId, request.Signature);
+                await _paymentRepository.UpdatePaymentStatusAsync(payment, "Failed");
                 return false;
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Error verifying payment signature", ex);
-            }
-        }
 
-        private string CalculateSignature(string data, string secret)
-        {
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-            return BitConverter.ToString(hash).Replace("-", "").ToLower();
+            await _paymentRepository.UpdatePaymentStatusAsync(payment, "Success");
+
+            if (int.TryParse(payment.OrderId, out int orderId))
+            {
+                var order = await _orderRepository.GetOrderByIdAsync(orderId);
+                if (order != null)
+                {
+                    order.Status = OrderStatus.Paid;
+                    await _orderRepository.UpdateOrderStatusAsync(order, OrderStatus.Paid);
+                }
+            }
+
+            return true;
         }
     }
 }

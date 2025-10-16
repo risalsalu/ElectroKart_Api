@@ -1,11 +1,11 @@
-﻿using ElectroKart_Api.DTOs.Payment;
+﻿using ElectroKart_Api.DTOs.Payments;
 using System.Threading.Tasks;
 
-namespace ElectroKart_Api.Services.Payment
+namespace ElectroKart_Api.Services.Payments
 {
     public interface IPaymentService
     {
-        Task<object> CreateOrderAsync(PaymentRequestDto request);
-        Task<bool> VerifyPaymentAsync(VerifyPaymentDto request);
+        Task<PaymentResponseDto> InitiatePaymentAsync(CreatePaymentRequestDto dto, int userId);
+        Task<bool> ConfirmPaymentAsync(PaymentConfirmationDto dto);
     }
 }

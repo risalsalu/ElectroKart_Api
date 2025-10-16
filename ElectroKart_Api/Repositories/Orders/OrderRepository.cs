@@ -1,6 +1,9 @@
 ﻿using ElectroKart_Api.Data;
 using ElectroKart_Api.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Repositories.Orders
 {
@@ -15,7 +18,6 @@ namespace ElectroKart_Api.Repositories.Orders
 
         public async Task<Order> CreateOrderAsync(Order order)
         {
-            // Add the order along with its items
             await _context.Orders.AddAsync(order);
             await _context.SaveChangesAsync();
             return order;
@@ -25,17 +27,25 @@ namespace ElectroKart_Api.Repositories.Orders
         {
             return await _context.Orders
                 .Where(o => o.UserId == userId)
-                .Include(o => o.Items) // Include order items
-                .ThenInclude(i => i.Product) // Include product details
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
         }
 
-        public async Task<Order?> GetOrderByIdAsync(int orderId)
+        public async Task<Order?> GetOrderByIdAsync(int orderId) // int now
         {
             return await _context.Orders
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
+        }
+
+        public async Task UpdateOrderStatusAsync(Order order, OrderStatus status)
+        {
+            order.Status = status;
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
         }
     }
 }

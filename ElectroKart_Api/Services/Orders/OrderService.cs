@@ -1,94 +1,126 @@
 ﻿using ElectroKart_Api.DTOs.Orders;
 using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories.Orders;
+using ElectroKart_Api.Data;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Services.Orders
 {
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly AppDbContext _context;
 
-        public OrderService(IOrderRepository orderRepository)
+        public OrderService(IOrderRepository orderRepository, AppDbContext context)
         {
             _orderRepository = orderRepository;
+            _context = context;
         }
 
-        // Create a new order
-        public async Task<OrderDto> CreateOrderAsync(int userId, OrderDto orderDto)
+        public async Task<OrderResponseDto> CreateOrderAsync(int userId, CreateOrderRequestDto dto)
         {
-            // Map DTO to entity
+            if (dto.Items == null || !dto.Items.Any())
+                throw new ArgumentException("Order must have at least one item.");
+
+            var items = new List<OrderItem>();
+            decimal totalAmount = 0;
+
+            foreach (var dtoItem in dto.Items)
+            {
+                var product = await _context.Products.FindAsync(dtoItem.ProductId);
+                if (product == null)
+                    throw new Exception($"Product with ID {dtoItem.ProductId} not found.");
+
+                items.Add(new OrderItem
+                {
+                    ProductId = product.Id,
+                    Quantity = dtoItem.Quantity,
+                    UnitPrice = product.Price
+                });
+
+                totalAmount += product.Price * dtoItem.Quantity;
+            }
+
             var order = new Order
             {
                 UserId = userId,
-                Status = orderDto.Status ?? "Pending",
+                ShippingAddress = dto.ShippingAddress,
+                PaymentMethod = dto.PaymentMethod,
+                Status = OrderStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
-                Items = orderDto.Items?.Select(i => new OrderItem
-                {
-                    ProductId = i.ProductId,
-                    Quantity = i.Quantity,
-                    Price = i.Price
-                }).ToList() ?? new List<OrderItem>()
+                TotalAmount = totalAmount,
+                Items = items
             };
 
-            // Calculate total amount
-            order.TotalAmount = order.Items.Sum(i => i.Price * i.Quantity);
-
-            // Save using repository
             var createdOrder = await _orderRepository.CreateOrderAsync(order);
 
-            // Map entity back to DTO
-            return new OrderDto
-            {
-                Id = createdOrder.Id,
-                Status = createdOrder.Status,
-                TotalAmount = createdOrder.TotalAmount,
-                CreatedAt = createdOrder.CreatedAt,
-                Items = createdOrder.Items.Select(i => new OrderItemDto
-                {
-                    ProductId = i.ProductId,
-                    Quantity = i.Quantity,
-                    Price = i.Price
-                }).ToList()
-            };
+            return MapOrderToDto(createdOrder);
         }
 
-        // Get all orders for a user
-        public async Task<List<OrderDto>> GetOrdersByUserIdAsync(int userId)
+        public async Task<List<OrderResponseDto>> GetOrdersByUserIdAsync(int userId)
         {
             var orders = await _orderRepository.GetOrdersByUserIdAsync(userId);
-
-            return orders.Select(o => new OrderDto
-            {
-                Id = o.Id,
-                Status = o.Status,
-                TotalAmount = o.TotalAmount,
-                CreatedAt = o.CreatedAt,
-                Items = o.Items.Select(i => new OrderItemDto
-                {
-                    ProductId = i.ProductId,
-                    Quantity = i.Quantity,
-                    Price = i.Price
-                }).ToList()
-            }).ToList();
+            return orders.Select(MapOrderToDto).ToList();
         }
 
-        // Get a specific order by Id
-        public async Task<OrderDto?> GetOrderByIdAsync(int orderId)
+        public async Task<OrderResponseDto?> GetOrderByIdAsync(string orderId, int userId)
         {
-            var order = await _orderRepository.GetOrderByIdAsync(orderId);
-            if (order == null) return null;
+            // Convert string "order_123" to int
+            if (!orderId.StartsWith("order_") || !int.TryParse(orderId.Replace("order_", ""), out int id))
+                return null;
 
-            return new OrderDto
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
+
+            if (order == null)
+                return null;
+
+            return MapOrderToDto(order);
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(string orderId, int userId, string status)
+        {
+            // Convert string "order_123" to int
+            if (!orderId.StartsWith("order_") || !int.TryParse(orderId.Replace("order_", ""), out int id))
+                return false;
+
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null)
+                return false;
+
+            if (userId != 0 && order.UserId != userId)
+                return false;
+
+            if (!Enum.TryParse<OrderStatus>(status, true, out var newStatus))
+                return false;
+
+            await _orderRepository.UpdateOrderStatusAsync(order, newStatus);
+            return true;
+        }
+
+        private OrderResponseDto MapOrderToDto(Order order)
+        {
+            return new OrderResponseDto
             {
-                Id = order.Id,
-                Status = order.Status,
+                OrderId = order.Id,
+                UserId = order.UserId,
+                ShippingAddress = order.ShippingAddress,
+                PaymentMethod = order.PaymentMethod,
                 TotalAmount = order.TotalAmount,
+                Status = order.Status.ToString(),
                 CreatedAt = order.CreatedAt,
-                Items = order.Items.Select(i => new OrderItemDto
+                Items = order.Items.Select(i => new OrderItemResponseDto
                 {
                     ProductId = i.ProductId,
+                    ProductName = i.Product?.Name ?? "",
                     Quantity = i.Quantity,
-                    Price = i.Price
+                    UnitPrice = i.UnitPrice,
                 }).ToList()
             };
         }

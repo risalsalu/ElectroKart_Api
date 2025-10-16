@@ -9,8 +9,6 @@ namespace ElectroKart_Api.Repositories
         Task<List<Product>> GetAllAsync();
         Task<Product?> GetByIdAsync(int id);
         Task<List<Product>> GetByCategoryIdAsync(int categoryId);
-
-        // New method for search/filter
         Task<List<Product>> SearchProductsAsync(ProductSearchDto searchDto);
     }
 }

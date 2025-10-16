@@ -31,7 +31,7 @@ namespace ElectroKart_Api.Services.Auth
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(15), // It's better to have short-lived access tokens
+                Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = creds,
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"]
@@ -43,7 +43,6 @@ namespace ElectroKart_Api.Services.Auth
             return tokenHandler.WriteToken(token);
         }
 
-        // --- ADD THIS ENTIRE METHOD ---
         public ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token)
         {
             var tokenValidationParameters = new TokenValidationParameters
@@ -52,7 +51,7 @@ namespace ElectroKart_Api.Services.Auth
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
-                ValidateLifetime = false // This is the key change to allow reading an expired token
+                ValidateLifetime = false
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

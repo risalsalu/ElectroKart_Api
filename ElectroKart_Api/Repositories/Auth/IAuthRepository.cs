@@ -9,8 +9,6 @@ namespace ElectroKart_Api.Repositories.Auth
         Task<List<User>> GetAllUsersAsync();
         Task UpdateUserAsync(User user);
         Task<User?> GetUserByUsernameAsync(string username);
-
-        // --- ADD THIS ---
         Task<User?> GetUserByIdAsync(int id);
     }
 }

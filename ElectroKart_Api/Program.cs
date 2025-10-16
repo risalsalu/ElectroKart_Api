@@ -6,11 +6,12 @@ using ElectroKart_Api.Repositories.Auth;
 using ElectroKart_Api.Repositories.Cart;
 using ElectroKart_Api.Repositories.Orders;
 using ElectroKart_Api.Repositories.Wishlist;
+using ElectroKart_Api.Repositories.Payments;
 using ElectroKart_Api.Services;
 using ElectroKart_Api.Services.Auth;
 using ElectroKart_Api.Services.CartServices;
 using ElectroKart_Api.Services.Orders;
-using ElectroKart_Api.Services.Payment;
+using ElectroKart_Api.Services.Payments;
 using ElectroKart_Api.Services.Products;
 using ElectroKart_Api.Services.Wishlist;
 using ElectroKart_Api.Settings;
@@ -23,15 +24,21 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ------------------------- Database -------------------------
+// -------------------------
+// Database
+// -------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// ------------------------- Controllers -------------------------
+// -------------------------
+// Controllers
+// -------------------------
 builder.Services.AddControllers();
 
-// ------------------------- App Settings -------------------------
+// -------------------------
+// Settings (Razorpay / Cloudinary)
+// -------------------------
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("RazorpaySettings")
 );
@@ -40,7 +47,9 @@ builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
 );
 
-// ------------------------- Repositories -------------------------
+// -------------------------
+// Repositories
+// -------------------------
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
@@ -48,7 +57,9 @@ builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-// ------------------------- Services -------------------------
+// -------------------------
+// Services
+// -------------------------
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -59,7 +70,9 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-// ------------------------- JWT Authentication -------------------------
+// -------------------------
+// JWT Authentication
+// -------------------------
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -77,7 +90,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ------------------------- Swagger -------------------------
+// -------------------------
+// Swagger with JWT Support
+// -------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -107,9 +122,14 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// -------------------------
+// Build App
+// -------------------------
 var app = builder.Build();
 
-// ------------------------- Middleware Pipeline -------------------------
+// -------------------------
+// Middleware Pipeline
+// -------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

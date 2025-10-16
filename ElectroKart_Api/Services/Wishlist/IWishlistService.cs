@@ -1,6 +1,4 @@
 ﻿using ElectroKart_Api.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Services.Wishlist
 {

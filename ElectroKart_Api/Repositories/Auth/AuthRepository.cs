@@ -41,7 +41,6 @@ namespace ElectroKart_Api.Repositories.Auth
             return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        // --- ADD THIS METHOD ---
         public async Task<User?> GetUserByIdAsync(int id)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
