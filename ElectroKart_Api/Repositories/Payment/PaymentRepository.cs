@@ -1,6 +1,7 @@
 ﻿using ElectroKart_Api.Data;
 using ElectroKart_Api.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Repositories.Payments
@@ -28,13 +29,14 @@ namespace ElectroKart_Api.Repositories.Payments
 
         public async Task<Payment?> GetPaymentByOrderIdAsync(int orderId)
         {
-            return await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId.ToString());
+            return await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
         }
 
         public async Task UpdatePaymentStatusAsync(Payment payment, string status)
         {
             payment.Status = status;
             payment.UpdatedAt = DateTime.UtcNow;
+
             _context.Payments.Update(payment);
             await _context.SaveChangesAsync();
         }

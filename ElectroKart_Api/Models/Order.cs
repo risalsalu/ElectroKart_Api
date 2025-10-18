@@ -31,6 +31,7 @@ namespace ElectroKart_Api.Models
         [MaxLength(50)]
         public string PaymentMethod { get; set; } = "COD";
 
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public List<OrderItem> Items { get; set; } = new();

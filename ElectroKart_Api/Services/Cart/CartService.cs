@@ -18,7 +18,6 @@ namespace ElectroKart_Api.Services.CartServices
 
         public async Task AddToCartAsync(int userId, int productId, int quantity)
         {
-            // ✅ Ensure product exists to prevent FK issues
             var product = await _context.Products.FindAsync(productId);
             if (product == null)
                 throw new Exception("Product does not exist.");
@@ -55,7 +54,7 @@ namespace ElectroKart_Api.Services.CartServices
         }
 
         public async Task<Cart?> GetCartByUserAsync(int userId)
-        {
+        {   
             return await _cartRepository.GetCartByUserIdAsync(userId);
         }
 

@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
 
 namespace ElectroKart_Api.DTOs.Products
 {
@@ -12,7 +11,6 @@ namespace ElectroKart_Api.DTOs.Products
 
         [Required, Range(0.01, 100000)]
         public decimal Price { get; set; }
-
 
         public string? ImageUrl { get; set; }
         public string? ImagePublicId { get; set; }

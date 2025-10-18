@@ -69,7 +69,6 @@ namespace ElectroKart_Api.Services.Orders
 
         public async Task<OrderResponseDto?> GetOrderByIdAsync(string orderId, int userId)
         {
-            // Convert string "order_123" to int
             if (!orderId.StartsWith("order_") || !int.TryParse(orderId.Replace("order_", ""), out int id))
                 return null;
 
@@ -86,7 +85,6 @@ namespace ElectroKart_Api.Services.Orders
 
         public async Task<bool> UpdateOrderStatusAsync(string orderId, int userId, string status)
         {
-            // Convert string "order_123" to int
             if (!orderId.StartsWith("order_") || !int.TryParse(orderId.Replace("order_", ""), out int id))
                 return false;
 

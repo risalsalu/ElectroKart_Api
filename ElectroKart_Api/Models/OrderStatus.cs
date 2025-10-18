@@ -1,9 +1,12 @@
-﻿public enum OrderStatus
+﻿namespace ElectroKart_Api.Models
 {
-    Pending,
-    Processing,
-    Paid, 
-    Shipped,
-    Delivered,
-    Cancelled
+    public enum OrderStatus
+    {
+        Pending,
+        Processing,
+        Paid,
+        Shipped,
+        Delivered,
+        Cancelled
+    }
 }

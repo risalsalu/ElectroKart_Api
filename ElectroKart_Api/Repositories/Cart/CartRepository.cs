@@ -32,7 +32,6 @@ namespace ElectroKart_Api.Repositories.Cart
 
         public async Task AddItemToCartAsync(int cartId, int productId, int quantity)
         {
-            // ✅ Ensure product exists to avoid FK violation
             var product = await _context.Products.FindAsync(productId);
             if (product == null)
                 throw new Exception("Product does not exist.");

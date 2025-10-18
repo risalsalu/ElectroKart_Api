@@ -23,51 +23,88 @@ namespace ElectroKart_Api.Controllers.Products
         [HttpPost]
         [Authorize]
         [AuthorizeRole("Admin")]
-        public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto productDto, IFormFile? imageFile)
+        public async Task<IActionResult> CreateProduct([FromForm] CreateProductDto dto, IFormFile? imageFile)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (imageFile != null && imageFile.Length > 0)
+            if (imageFile != null)
             {
-                var uploadResult = await _cloudinaryService.UploadImageAsync(imageFile);
-                productDto.ImageUrl = uploadResult.SecureUrl.ToString();
-                productDto.ImagePublicId = uploadResult.PublicId;
+                var upload = await _cloudinaryService.UploadImageAsync(imageFile);
+                dto.ImageUrl = upload.SecureUrl.ToString();
+                dto.ImagePublicId = upload.PublicId;
             }
 
-            var createdProduct = await _productService.CreateProductAsync(productDto);
-            var productToReturn = await _productService.GetProductByIdAsync(createdProduct.Id);
+            var created = await _productService.CreateProductAsync(dto);
+            if (!created.Success) return BadRequest(created.Message);
 
-            return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, productToReturn);
+            var productResp = await _productService.GetProductByIdAsync(created.Data!.Id);
+            if (!productResp.Success || productResp.Data == null) return NotFound(productResp.Message);
+
+            return CreatedAtAction(nameof(GetProductById), new { id = productResp.Data.Id }, productResp.Data);
+        }
+
+        [HttpPut("{id:int}")]
+        [Authorize]
+        [AuthorizeRole("Admin")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] UpdateProductDto dto, IFormFile? imageFile)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != dto.Id) return BadRequest("Product ID mismatch");
+
+            if (imageFile != null)
+            {
+                var upload = await _cloudinaryService.UploadImageAsync(imageFile);
+                dto.ImageUrl = upload.SecureUrl.ToString();
+                dto.ImagePublicId = upload.PublicId;
+            }
+
+            var updateResp = await _productService.UpdateProductAsync(dto);
+            if (!updateResp.Success) return BadRequest(updateResp.Message);
+
+            return Ok(updateResp.Data);
+        }
+
+        [HttpDelete("{id:int}")]
+        [Authorize]
+        [AuthorizeRole("Admin")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var resp = await _productService.DeleteProductAsync(id);
+            if (!resp.Success) return BadRequest(resp.Message);
+
+            return Ok(new { message = "Product deleted successfully" });
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllProducts()
         {
-            var products = await _productService.GetAllProductsAsync();
-            return Ok(products);
+            var resp = await _productService.GetAllProductsAsync();
+            if (!resp.Success) return BadRequest(resp.Message);
+            return Ok(resp.Data);
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetProductById(int id)
         {
-            var product = await _productService.GetProductByIdAsync(id);
-            if (product == null) return NotFound();
-            return Ok(product);
+            var resp = await _productService.GetProductByIdAsync(id);
+            if (!resp.Success || resp.Data == null) return NotFound(resp.Message);
+            return Ok(resp.Data);
         }
 
         [HttpGet("category/{categoryId:int}")]
         public async Task<IActionResult> GetProductsByCategory(int categoryId)
         {
-            var products = await _productService.GetProductsByCategoryIdAsync(categoryId);
-            return Ok(products);
+            var resp = await _productService.GetProductsByCategoryIdAsync(categoryId);
+            if (!resp.Success) return BadRequest(resp.Message);
+            return Ok(resp.Data);
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchDto searchDto)
+        public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchDto dto)
         {
-            var products = await _productService.SearchProductsAsync(searchDto);
-            return Ok(products);
+            var resp = await _productService.SearchProductsAsync(dto);
+            if (!resp.Success) return BadRequest(resp.Message);
+            return Ok(resp.Data);
         }
     }
 }

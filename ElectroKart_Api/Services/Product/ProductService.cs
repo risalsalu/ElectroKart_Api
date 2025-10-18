@@ -1,54 +1,92 @@
 ﻿using ElectroKart_Api.DTOs.Products;
+using ElectroKart_Api.Helpers;
 using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Services.Products
 {
     public class ProductService : IProductService
     {
-        private readonly IProductRepository _productRepository;
+        private readonly IProductRepository _productRepo;
 
-        public ProductService(IProductRepository productRepository)
+        public ProductService(IProductRepository productRepo)
         {
-            _productRepository = productRepository;
+            _productRepo = productRepo;
         }
 
-        public async Task<Product> CreateProductAsync(CreateProductDto productDto)
+        public async Task<ApiResponse<ProductDto>> CreateProductAsync(CreateProductDto dto)
         {
             var product = new Product
             {
-                Name = productDto.Name,
-                Description = productDto.Description,
-                Price = productDto.Price,
-                ImageUrl = productDto.ImageUrl,
-                CategoryId = productDto.CategoryId
+                Name = dto.Name,
+                Description = dto.Description,
+                Price = dto.Price,
+                ImageUrl = dto.ImageUrl,
+                ImagePublicId = dto.ImagePublicId,
+                CategoryId = dto.CategoryId
             };
 
-            return await _productRepository.CreateAsync(product);
+            var created = await _productRepo.CreateAsync(product);
+            return ApiResponse<ProductDto>.SuccessResponse(MapToDto(created));
         }
 
-        public async Task<List<ProductDto>> GetAllProductsAsync()
+        public async Task<ApiResponse<ProductDto>> UpdateProductAsync(UpdateProductDto dto)
         {
-            var products = await _productRepository.GetAllAsync();
-            return products.Select(MapToDto).ToList();
+            var existing = await _productRepo.GetByIdAsync(dto.Id);
+            if (existing == null)
+                return ApiResponse<ProductDto>.FailureResponse("Product not found");
+
+            existing.Name = dto.Name;
+            existing.Description = dto.Description;
+            existing.Price = dto.Price;
+            existing.CategoryId = dto.CategoryId;
+            existing.ImageUrl = dto.ImageUrl;
+            existing.ImagePublicId = dto.ImagePublicId;
+            existing.IsActive = dto.IsActive;
+
+            var updated = await _productRepo.UpdateAsync(existing);
+            return ApiResponse<ProductDto>.SuccessResponse(MapToDto(updated!));
         }
 
-        public async Task<ProductDto?> GetProductByIdAsync(int id)
+        public async Task<ApiResponse<bool>> DeleteProductAsync(int id)
         {
-            var product = await _productRepository.GetByIdAsync(id);
-            return product == null ? null : MapToDto(product);
+            var existing = await _productRepo.GetByIdAsync(id);
+            if (existing == null)
+                return ApiResponse<bool>.FailureResponse("Product not found");
+
+            var deleted = await _productRepo.DeleteAsync(existing);
+            return ApiResponse<bool>.SuccessResponse(deleted);
         }
 
-        public async Task<List<ProductDto>> GetProductsByCategoryIdAsync(int categoryId)
+        public async Task<ApiResponse<ProductDto?>> GetProductByIdAsync(int id)
         {
-            var products = await _productRepository.GetByCategoryIdAsync(categoryId);
-            return products.Select(MapToDto).ToList();
+            var product = await _productRepo.GetByIdAsync(id);
+            if (product == null) return ApiResponse<ProductDto?>.FailureResponse("Product not found");
+
+            return ApiResponse<ProductDto?>.SuccessResponse(MapToDto(product));
         }
-        public async Task<List<ProductDto>> SearchProductsAsync(ProductSearchDto searchDto)
+
+        public async Task<ApiResponse<IEnumerable<ProductDto>>> GetAllProductsAsync()
         {
-            var products = await _productRepository.SearchProductsAsync(searchDto);
-            return products.Select(MapToDto).ToList();
+            var products = await _productRepo.GetAllAsync();
+            return ApiResponse<IEnumerable<ProductDto>>.SuccessResponse(products.Select(MapToDto));
         }
+
+        public async Task<ApiResponse<IEnumerable<ProductDto>>> GetProductsByCategoryIdAsync(int categoryId)
+        {
+            var products = await _productRepo.GetByCategoryIdAsync(categoryId);
+            return ApiResponse<IEnumerable<ProductDto>>.SuccessResponse(products.Select(MapToDto));
+        }
+
+        public async Task<ApiResponse<IEnumerable<ProductDto>>> SearchProductsAsync(ProductSearchDto dto)
+        {
+            var products = await _productRepo.SearchProductsAsync(dto);
+            return ApiResponse<IEnumerable<ProductDto>>.SuccessResponse(products.Select(MapToDto));
+        }
+
         private ProductDto MapToDto(Product p)
         {
             return new ProductDto
@@ -57,8 +95,10 @@ namespace ElectroKart_Api.Services.Products
                 Name = p.Name,
                 Description = p.Description,
                 Price = p.Price,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category?.Name ?? "N/A",
                 ImageUrl = p.ImageUrl,
-                CategoryName = p.Category?.Name ?? "N/A"
+                IsActive = p.IsActive
             };
         }
     }

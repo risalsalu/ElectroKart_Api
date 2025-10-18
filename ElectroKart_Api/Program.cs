@@ -4,9 +4,10 @@ using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories;
 using ElectroKart_Api.Repositories.Auth;
 using ElectroKart_Api.Repositories.Cart;
+using ElectroKart_Api.Repositories.GenericRepo;
 using ElectroKart_Api.Repositories.Orders;
-using ElectroKart_Api.Repositories.Wishlist;
 using ElectroKart_Api.Repositories.Payments;
+using ElectroKart_Api.Repositories.Wishlist;
 using ElectroKart_Api.Services;
 using ElectroKart_Api.Services.Auth;
 using ElectroKart_Api.Services.CartServices;
@@ -24,32 +25,32 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// -------------------------
-// Database
-// -------------------------
+// ------------------------------------------------------
+// 1. Configure Database
+// ------------------------------------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// -------------------------
-// Controllers
-// -------------------------
+// ------------------------------------------------------
+// 2. Add Controllers
+// ------------------------------------------------------
 builder.Services.AddControllers();
 
-// -------------------------
-// Settings (Razorpay / Cloudinary)
-// -------------------------
+// ------------------------------------------------------
+// 3. Configure App Settings
+// ------------------------------------------------------
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("RazorpaySettings")
 );
-
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
 );
 
-// -------------------------
-// Repositories
-// -------------------------
+// ------------------------------------------------------
+// 4. Register Repositories
+// ------------------------------------------------------
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
@@ -57,9 +58,9 @@ builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-// -------------------------
-// Services
-// -------------------------
+// ------------------------------------------------------
+// 5. Register Services
+// ------------------------------------------------------
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -70,9 +71,9 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-// -------------------------
-// JWT Authentication
-// -------------------------
+// ------------------------------------------------------
+// 6. JWT Authentication
+// ------------------------------------------------------
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -90,12 +91,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// -------------------------
-// Swagger with JWT Support
-// -------------------------
+// ------------------------------------------------------
+// 7. Swagger / OpenAPI
+// ------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ElectroKart API",
+        Version = "v1"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -122,19 +129,22 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// -------------------------
-// Build App
-// -------------------------
+// ------------------------------------------------------
+// 8. Build App
+// ------------------------------------------------------
 var app = builder.Build();
 
-// -------------------------
-// Middleware Pipeline
-// -------------------------
+// ------------------------------------------------------
+// 9. Middleware Pipeline
+// ------------------------------------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Global Error Handling
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
@@ -143,6 +153,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Custom Role Middleware
 app.UseMiddleware<RoleAuthorizationMiddleware>();
 
 app.MapControllers();

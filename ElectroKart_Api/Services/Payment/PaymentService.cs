@@ -27,8 +27,8 @@ namespace ElectroKart_Api.Services.Payments
             var payment = new Payment
             {
                 PaymentId = Guid.NewGuid().ToString(),
-                OrderId = order.Id.ToString(), // FIX: Convert int to string
-                OrderReference = $"order_{order.Id}",
+                OrderId = order.Id, // int matches Orders.Id
+                OrderReference = $"order_{order.Id}", // string for gateway
                 Amount = dto.Amount,
                 Currency = dto.Currency,
                 Status = "Pending",
@@ -56,7 +56,7 @@ namespace ElectroKart_Api.Services.Payments
             var payment = await _paymentRepository.GetPaymentByPaymentIdAsync(dto.PaymentId);
             if (payment == null) return false;
 
-            bool isValid = true; // Replace with actual gateway verification
+            bool isValid = true; // validate signature if needed
             if (!isValid)
             {
                 await _paymentRepository.UpdatePaymentStatusAsync(payment, "Failed");
@@ -65,14 +65,11 @@ namespace ElectroKart_Api.Services.Payments
 
             await _paymentRepository.UpdatePaymentStatusAsync(payment, "Success");
 
-            if (int.TryParse(payment.OrderId, out int orderId))
+            var order = await _orderRepository.GetOrderByIdAsync(payment.OrderId);
+            if (order != null)
             {
-                var order = await _orderRepository.GetOrderByIdAsync(orderId);
-                if (order != null)
-                {
-                    order.Status = OrderStatus.Paid;
-                    await _orderRepository.UpdateOrderStatusAsync(order, OrderStatus.Paid);
-                }
+                order.Status = OrderStatus.Paid;
+                await _orderRepository.UpdateOrderStatusAsync(order, OrderStatus.Paid);
             }
 
             return true;

@@ -10,7 +10,7 @@ namespace ElectroKart_Api.Controllers.Orders
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize] 
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -39,7 +39,7 @@ namespace ElectroKart_Api.Controllers.Orders
 
             return CreatedAtAction(
                 nameof(GetOrderById),
-                new { orderId = $"order_{createdOrder.OrderId}" }, // pass string format
+                new { orderId = $"order_{createdOrder.OrderId}" },
                 createdOrder
             );
         }
@@ -61,7 +61,7 @@ namespace ElectroKart_Api.Controllers.Orders
         }
 
         [HttpGet("{orderId}")]
-        public async Task<IActionResult> GetOrderById(string orderId) // string instead of int
+        public async Task<IActionResult> GetOrderById(string orderId)
         {
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
@@ -69,7 +69,7 @@ namespace ElectroKart_Api.Controllers.Orders
 
             int userId = int.Parse(userIdClaim.Value);
 
-            var order = await _orderService.GetOrderByIdAsync(orderId, userId); // pass string
+            var order = await _orderService.GetOrderByIdAsync(orderId, userId);
 
             if (order == null)
                 return NotFound("Order not found.");
@@ -84,7 +84,6 @@ namespace ElectroKart_Api.Controllers.Orders
             if (string.IsNullOrWhiteSpace(status))
                 return BadRequest("Status is required.");
 
-            // Admin updates, no userId check (pass 0)
             var success = await _orderService.UpdateOrderStatusAsync(orderId, 0, status); // orderId string
 
             if (!success)

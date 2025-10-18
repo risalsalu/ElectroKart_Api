@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ElectroKart_Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251013120055_PaymentIntegerated")]
-    partial class PaymentIntegerated
+    [Migration("20251018050359_PaymentClean")]
+    partial class PaymentClean
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -87,6 +87,75 @@ namespace ElectroKart_Api.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("ElectroKart_Api.Models.Order", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ShippingAddress")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("ElectroKart_Api.Models.OrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("OrderItems");
+                });
+
             modelBuilder.Entity("ElectroKart_Api.Models.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -99,27 +168,47 @@ namespace ElectroKart_Api.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<string>("Currency")
                         .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OrderId")
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OrderReference")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PaymentId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Signature")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Payments");
                 });
@@ -139,9 +228,14 @@ namespace ElectroKart_Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
+                    b.Property<string>("ImagePublicId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -149,7 +243,7 @@ namespace ElectroKart_Api.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -177,6 +271,12 @@ namespace ElectroKart_Api.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -263,10 +363,59 @@ namespace ElectroKart_Api.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ElectroKart_Api.Models.Order", b =>
+                {
+                    b.HasOne("ElectroKart_Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ElectroKart_Api.Models.OrderItem", b =>
+                {
+                    b.HasOne("ElectroKart_Api.Models.Order", "Order")
+                        .WithMany("Items")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ElectroKart_Api.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ElectroKart_Api.Models.Payment", b =>
+                {
+                    b.HasOne("ElectroKart_Api.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ElectroKart_Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ElectroKart_Api.Models.Product", b =>
                 {
                     b.HasOne("ElectroKart_Api.Models.Category", "Category")
-                        .WithMany()
+                        .WithMany("Products")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -305,6 +454,16 @@ namespace ElectroKart_Api.Migrations
                 });
 
             modelBuilder.Entity("ElectroKart_Api.Models.Cart", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("ElectroKart_Api.Models.Category", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ElectroKart_Api.Models.Order", b =>
                 {
                     b.Navigation("Items");
                 });

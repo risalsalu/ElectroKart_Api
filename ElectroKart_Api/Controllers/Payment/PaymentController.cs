@@ -10,7 +10,7 @@ namespace ElectroKart_Api.Controllers.Payments
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // only authenticated users
+    [Authorize]
     public class PaymentsController : ControllerBase
     {
         private readonly IPaymentService _paymentService;
