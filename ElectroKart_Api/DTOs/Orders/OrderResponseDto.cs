@@ -5,7 +5,7 @@ namespace ElectroKart_Api.DTOs.Orders
 {
     public class OrderResponseDto
     {
-        public int OrderId { get; set; }
+        public string OrderId { get; set; } = string.Empty; // order_XXXX
         public int UserId { get; set; }
         public string ShippingAddress { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = "COD";

@@ -1,4 +1,5 @@
 ﻿using ElectroKart_Api.DTOs.Orders;
+using ElectroKart_Api.Helpers;
 using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories.Orders;
 using ElectroKart_Api.Data;
@@ -21,92 +22,102 @@ namespace ElectroKart_Api.Services.Orders
             _context = context;
         }
 
-        public async Task<OrderResponseDto> CreateOrderAsync(int userId, CreateOrderRequestDto dto)
+        public async Task<ApiResponse<OrderResponseDto>> CreateOrderAsync(int userId, CreateOrderRequestDto dto)
         {
-            if (dto.Items == null || !dto.Items.Any())
-                throw new ArgumentException("Order must have at least one item.");
-
-            var items = new List<OrderItem>();
-            decimal totalAmount = 0;
-
-            foreach (var dtoItem in dto.Items)
+            try
             {
-                var product = await _context.Products.FindAsync(dtoItem.ProductId);
-                if (product == null)
-                    throw new Exception($"Product with ID {dtoItem.ProductId} not found.");
+                if (dto.Items == null || !dto.Items.Any())
+                    return ApiResponse<OrderResponseDto>.FailureResponse("Order must have at least one item");
 
-                items.Add(new OrderItem
+                var items = new List<OrderItem>();
+                decimal totalAmount = 0;
+
+                foreach (var dtoItem in dto.Items)
                 {
-                    ProductId = product.Id,
-                    Quantity = dtoItem.Quantity,
-                    UnitPrice = product.Price
-                });
+                    var product = await _context.Products.FindAsync(dtoItem.ProductId);
+                    if (product == null)
+                        return ApiResponse<OrderResponseDto>.FailureResponse($"Product ID {dtoItem.ProductId} not found");
 
-                totalAmount += product.Price * dtoItem.Quantity;
+                    items.Add(new OrderItem
+                    {
+                        ProductId = product.Id,
+                        Quantity = dtoItem.Quantity,
+                        UnitPrice = product.Price
+                    });
+
+                    totalAmount += product.Price * dtoItem.Quantity;
+                }
+
+                var order = new Order
+                {
+                    UserId = userId,
+                    ShippingAddress = dto.ShippingAddress,
+                    PaymentMethod = dto.PaymentMethod,
+                    Status = OrderStatus.Pending,
+                    CreatedAt = DateTime.UtcNow,
+                    TotalAmount = totalAmount,
+                    Items = items
+                };
+
+                var created = await _orderRepository.CreateOrderAsync(order);
+
+                return ApiResponse<OrderResponseDto>.SuccessResponse(MapOrderToDto(created), "Order created successfully");
             }
-
-            var order = new Order
+            catch (Exception ex)
             {
-                UserId = userId,
-                ShippingAddress = dto.ShippingAddress,
-                PaymentMethod = dto.PaymentMethod,
-                Status = OrderStatus.Pending,
-                CreatedAt = DateTime.UtcNow,
-                TotalAmount = totalAmount,
-                Items = items
-            };
-
-            var createdOrder = await _orderRepository.CreateOrderAsync(order);
-
-            return MapOrderToDto(createdOrder);
+                return ApiResponse<OrderResponseDto>.FailureResponse("Failed to create order", ex.Message);
+            }
         }
 
-        public async Task<List<OrderResponseDto>> GetOrdersByUserIdAsync(int userId)
+        public async Task<ApiResponse<List<OrderResponseDto>>> GetOrdersByUserIdAsync(int userId)
         {
             var orders = await _orderRepository.GetOrdersByUserIdAsync(userId);
-            return orders.Select(MapOrderToDto).ToList();
+            var dtos = orders.Select(MapOrderToDto).ToList();
+            return ApiResponse<List<OrderResponseDto>>.SuccessResponse(dtos, "Orders fetched successfully");
         }
 
-        public async Task<OrderResponseDto?> GetOrderByIdAsync(string orderId, int userId)
+        public async Task<ApiResponse<OrderResponseDto>> GetOrderByIdAsync(string orderId, int userId, bool isAdmin = false)
         {
-            if (!orderId.StartsWith("order_") || !int.TryParse(orderId.Replace("order_", ""), out int id))
-                return null;
+            if (!TryParseOrderId(orderId, out int id))
+                return ApiResponse<OrderResponseDto>.FailureResponse("Invalid order ID");
 
-            var order = await _context.Orders
-                .Include(o => o.Items)
-                .ThenInclude(i => i.Product)
-                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
+            var order = await _orderRepository.GetOrderByIdAsync(id);
+            if (order == null) return ApiResponse<OrderResponseDto>.FailureResponse("Order not found");
 
-            if (order == null)
-                return null;
+            if (!isAdmin && order.UserId != userId)
+                return ApiResponse<OrderResponseDto>.FailureResponse("Unauthorized access");
 
-            return MapOrderToDto(order);
+            return ApiResponse<OrderResponseDto>.SuccessResponse(MapOrderToDto(order), "Order fetched successfully");
         }
 
-        public async Task<bool> UpdateOrderStatusAsync(string orderId, int userId, string status)
+        public async Task<ApiResponse<bool>> UpdateOrderStatusAsync(string orderId, string status)
         {
-            if (!orderId.StartsWith("order_") || !int.TryParse(orderId.Replace("order_", ""), out int id))
-                return false;
+            if (!TryParseOrderId(orderId, out int id))
+                return ApiResponse<bool>.FailureResponse("Invalid order ID");
 
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
+            var order = await _orderRepository.GetOrderByIdAsync(id);
             if (order == null)
-                return false;
-
-            if (userId != 0 && order.UserId != userId)
-                return false;
+                return ApiResponse<bool>.FailureResponse("Order not found");
 
             if (!Enum.TryParse<OrderStatus>(status, true, out var newStatus))
-                return false;
+                return ApiResponse<bool>.FailureResponse("Invalid status value");
 
             await _orderRepository.UpdateOrderStatusAsync(order, newStatus);
-            return true;
+            return ApiResponse<bool>.SuccessResponse(true, "Order status updated successfully");
+        }
+
+        public async Task<ApiResponse<List<OrderResponseDto>>> GetAllOrdersAsync()
+        {
+            var orders = await _orderRepository.GetAllOrdersAsync();
+            var dtos = orders.Select(MapOrderToDto).ToList();
+            return ApiResponse<List<OrderResponseDto>>.SuccessResponse(dtos, "All orders fetched successfully");
         }
 
         private OrderResponseDto MapOrderToDto(Order order)
         {
             return new OrderResponseDto
             {
-                OrderId = order.Id,
+                OrderId = $"order_{order.Id}",
                 UserId = order.UserId,
                 ShippingAddress = order.ShippingAddress,
                 PaymentMethod = order.PaymentMethod,
@@ -118,9 +129,17 @@ namespace ElectroKart_Api.Services.Orders
                     ProductId = i.ProductId,
                     ProductName = i.Product?.Name ?? "",
                     Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice,
+                    UnitPrice = i.UnitPrice
                 }).ToList()
             };
+        }
+
+        private bool TryParseOrderId(string orderId, out int id)
+        {
+            id = 0;
+            if (orderId.StartsWith("order_"))
+                return int.TryParse(orderId.Replace("order_", ""), out id);
+            return int.TryParse(orderId, out id);
         }
     }
 }

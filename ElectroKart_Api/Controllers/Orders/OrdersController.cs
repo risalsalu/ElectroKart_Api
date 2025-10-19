@@ -1,4 +1,5 @@
 ﻿using ElectroKart_Api.DTOs.Orders;
+using ElectroKart_Api.Helpers;
 using ElectroKart_Api.Services.Orders;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,86 +11,62 @@ namespace ElectroKart_Api.Controllers.Orders
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] 
+    [Authorize]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
-
         public OrdersController(IOrderService orderService)
         {
             _orderService = orderService;
         }
 
+        private int GetUserId() => int.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
+
+        private bool IsAdmin() => User.IsInRole("Admin");
+
         [HttpPost("checkout")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequestDto dto)
         {
-            if (dto == null || dto.Items == null || !dto.Items.Any())
-                return BadRequest("Order must have at least one item.");
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            if (userIdClaim == null)
-                return Unauthorized();
-
-            int userId = int.Parse(userIdClaim.Value);
-
-            var createdOrder = await _orderService.CreateOrderAsync(userId, dto);
-
-            return CreatedAtAction(
-                nameof(GetOrderById),
-                new { orderId = $"order_{createdOrder.OrderId}" },
-                createdOrder
-            );
+            var userId = GetUserId();
+            var response = await _orderService.CreateOrderAsync(userId, dto);
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
         }
 
         [HttpGet("my-orders")]
-        public async Task<IActionResult> GetOrdersByUserId()
+        public async Task<IActionResult> GetMyOrders()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            if (userIdClaim == null)
-                return Unauthorized();
-
-            int userId = int.Parse(userIdClaim.Value);
-            var orders = await _orderService.GetOrdersByUserIdAsync(userId);
-
-            if (orders == null || !orders.Any())
-                return NotFound("No orders found for this user.");
-
-            return Ok(orders);
+            var userId = GetUserId();
+            var response = await _orderService.GetOrdersByUserIdAsync(userId);
+            if (!response.Success) return NotFound(response);
+            return Ok(response);
         }
 
         [HttpGet("{orderId}")]
         public async Task<IActionResult> GetOrderById(string orderId)
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            if (userIdClaim == null)
-                return Unauthorized();
-
-            int userId = int.Parse(userIdClaim.Value);
-
-            var order = await _orderService.GetOrderByIdAsync(orderId, userId);
-
-            if (order == null)
-                return NotFound("Order not found.");
-
-            return Ok(order);
+            var userId = GetUserId();
+            var response = await _orderService.GetOrderByIdAsync(orderId, userId, IsAdmin());
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
         }
 
         [HttpPatch("{orderId}/status")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOrderStatus(string orderId, [FromBody] string status)
         {
-            if (string.IsNullOrWhiteSpace(status))
-                return BadRequest("Status is required.");
+            var response = await _orderService.UpdateOrderStatusAsync(orderId, status);
+            if (!response.Success) return BadRequest(response);
+            return Ok(response);
+        }
 
-            var success = await _orderService.UpdateOrderStatusAsync(orderId, 0, status); // orderId string
-
-            if (!success)
-                return BadRequest("Failed to update order status.");
-
-            return NoContent();
+        [HttpGet("all-orders")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            var response = await _orderService.GetAllOrdersAsync();
+            if (!response.Success) return NotFound(response);
+            return Ok(response);
         }
     }
 }

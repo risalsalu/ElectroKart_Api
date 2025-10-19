@@ -8,6 +8,7 @@ namespace ElectroKart_Api.Repositories.Orders
     {
         Task<Order> CreateOrderAsync(Order order);
         Task<List<Order>> GetOrdersByUserIdAsync(int userId);
+        Task<List<Order>> GetAllOrdersAsync(); // Admin only
         Task<Order?> GetOrderByIdAsync(int orderId);
         Task UpdateOrderStatusAsync(Order order, OrderStatus status);
     }

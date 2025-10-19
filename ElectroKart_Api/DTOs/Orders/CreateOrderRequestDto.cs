@@ -14,7 +14,7 @@ namespace ElectroKart_Api.DTOs.Orders
         public string PaymentMethod { get; set; } = "COD";
 
         [Required]
-        [MinLength(1, ErrorMessage = "Order must have at least one item")]
+        [MinLength(1)]
         public List<CreateOrderItemDto> Items { get; set; } = new();
     }
 }
