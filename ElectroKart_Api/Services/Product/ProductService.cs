@@ -11,14 +11,23 @@ namespace ElectroKart_Api.Services.Products
     public class ProductService : IProductService
     {
         private readonly IProductRepository _productRepo;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ProductService(IProductRepository productRepo)
+        public ProductService(IProductRepository productRepo, ICloudinaryService cloudinaryService)
         {
             _productRepo = productRepo;
+            _cloudinaryService = cloudinaryService;
         }
 
-        public async Task<ApiResponse<ProductDto>> CreateProductAsync(CreateProductDto dto)
+        public async Task<ApiResponse<string>> CreateProductAsync(CreateProductDto dto)
         {
+            if (dto.Image != null)
+            {
+                var upload = await _cloudinaryService.UploadImageAsync(dto.Image);
+                dto.ImageUrl = upload.SecureUrl.ToString();
+                dto.ImagePublicId = upload.PublicId;
+            }
+
             var product = new Product
             {
                 Name = dto.Name,
@@ -26,29 +35,38 @@ namespace ElectroKart_Api.Services.Products
                 Price = dto.Price,
                 ImageUrl = dto.ImageUrl,
                 ImagePublicId = dto.ImagePublicId,
-                CategoryId = dto.CategoryId
+                CategoryId = dto.CategoryId,
+                IsActive = true
             };
 
-            var created = await _productRepo.CreateAsync(product);
-            return ApiResponse<ProductDto>.SuccessResponse(MapToDto(created));
+            await _productRepo.CreateAsync(product);
+            return ApiResponse<string>.SuccessResponse("Product added successfully.");
         }
 
-        public async Task<ApiResponse<ProductDto>> UpdateProductAsync(UpdateProductDto dto)
+        public async Task<ApiResponse<string>> UpdateProductAsync(UpdateProductDto dto)
         {
             var existing = await _productRepo.GetByIdAsync(dto.Id);
             if (existing == null)
-                return ApiResponse<ProductDto>.FailureResponse("Product not found");
+                return ApiResponse<string>.FailureResponse("Product not found");
+
+            if (dto.Image != null)
+            {
+                if (!string.IsNullOrEmpty(existing.ImagePublicId))
+                    await _cloudinaryService.DeleteImageAsync(existing.ImagePublicId);
+
+                var upload = await _cloudinaryService.UploadImageAsync(dto.Image);
+                existing.ImageUrl = upload.SecureUrl.ToString();
+                existing.ImagePublicId = upload.PublicId;
+            }
 
             existing.Name = dto.Name;
             existing.Description = dto.Description;
             existing.Price = dto.Price;
             existing.CategoryId = dto.CategoryId;
-            existing.ImageUrl = dto.ImageUrl;
-            existing.ImagePublicId = dto.ImagePublicId;
             existing.IsActive = dto.IsActive;
 
-            var updated = await _productRepo.UpdateAsync(existing);
-            return ApiResponse<ProductDto>.SuccessResponse(MapToDto(updated!));
+            await _productRepo.UpdateAsync(existing);
+            return ApiResponse<string>.SuccessResponse("Product updated successfully.");
         }
 
         public async Task<ApiResponse<bool>> DeleteProductAsync(int id)
@@ -57,6 +75,9 @@ namespace ElectroKart_Api.Services.Products
             if (existing == null)
                 return ApiResponse<bool>.FailureResponse("Product not found");
 
+            if (!string.IsNullOrEmpty(existing.ImagePublicId))
+                await _cloudinaryService.DeleteImageAsync(existing.ImagePublicId);
+
             var deleted = await _productRepo.DeleteAsync(existing);
             return ApiResponse<bool>.SuccessResponse(deleted);
         }
@@ -64,7 +85,8 @@ namespace ElectroKart_Api.Services.Products
         public async Task<ApiResponse<ProductDto?>> GetProductByIdAsync(int id)
         {
             var product = await _productRepo.GetByIdAsync(id);
-            if (product == null) return ApiResponse<ProductDto?>.FailureResponse("Product not found");
+            if (product == null)
+                return ApiResponse<ProductDto?>.FailureResponse("Product not found");
 
             return ApiResponse<ProductDto?>.SuccessResponse(MapToDto(product));
         }

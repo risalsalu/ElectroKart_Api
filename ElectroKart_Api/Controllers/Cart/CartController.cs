@@ -1,8 +1,10 @@
 ﻿using ElectroKart_Api.DTOs.Cart;
+using ElectroKart_Api.Helpers;
 using ElectroKart_Api.Services.CartServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Collections.Generic;
 
 namespace ElectroKart_Api.Controllers.Cart
 {
@@ -18,71 +20,76 @@ namespace ElectroKart_Api.Controllers.Cart
             _cartService = cartService;
         }
 
+        private int? GetUserIdFromClaims()
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+                return null;
+
+            return userId;
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetCart()
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-                return Unauthorized("User ID claim not found or invalid.");
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+                return Unauthorized(ApiResponse<List<CartItemDto>>.FailureResponse("User ID claim not found or invalid"));
 
-            var cart = await _cartService.GetCartByUserAsync(userId);
-
-            if (cart == null || cart.Items == null || !cart.Items.Any())
-                return Ok(new { message = "Cart is empty." });
-
-            foreach (var item in cart.Items)
-            {
-                item.Cart = null;
-            }
-
-            return Ok(cart);
+            var result = await _cartService.GetCartByUserAsync(userId.Value);
+            return Ok(result);
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> AddToCart([FromBody] CartItemDto cartItemDto)
+        public async Task<IActionResult> AddToCart([FromBody] CartItemRequestDto request)
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-                return Unauthorized("User ID claim not found or invalid.");
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+                return Unauthorized(ApiResponse<CartItemDto>.FailureResponse("User ID claim not found or invalid"));
 
-            await _cartService.AddToCartAsync(userId, cartItemDto.ProductId, cartItemDto.Quantity);
-            return Ok(new { message = "Product added to cart successfully." });
+            var result = await _cartService.AddToCartAsync(userId.Value, request);
+            if (!result.Success) return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPut("update/{itemId}")]
-        public async Task<IActionResult> UpdateCartItem(int itemId, [FromBody] CartItemDto cartItemDto)
+        public async Task<IActionResult> UpdateCartItem(int itemId, [FromBody] CartItemRequestDto request)
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-                return Unauthorized("User ID claim not found or invalid.");
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+                return Unauthorized(ApiResponse<CartItemDto>.FailureResponse("User ID claim not found or invalid"));
 
-            var updated = await _cartService.UpdateCartItemQuantityAsync(userId, itemId, cartItemDto.Quantity);
-            if (!updated) return NotFound("Cart item not found.");
+            var result = await _cartService.UpdateCartItemQuantityAsync(userId.Value, itemId, request);
+            if (!result.Success) return NotFound(result);
 
-            return Ok(new { message = "Cart item updated successfully." });
+            return Ok(result);
         }
 
         [HttpDelete("remove/{itemId}")]
         public async Task<IActionResult> RemoveCartItem(int itemId)
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-                return Unauthorized("User ID claim not found or invalid.");
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+                return Unauthorized(ApiResponse<bool>.FailureResponse("User ID claim not found or invalid"));
 
-            var removed = await _cartService.RemoveFromCartAsync(userId, itemId);
-            if (!removed) return NotFound("Cart item not found.");
+            var result = await _cartService.RemoveFromCartAsync(userId.Value, itemId);
+            if (!result.Success) return NotFound(result);
 
-            return Ok(new { message = "Cart item removed successfully." });
+            return Ok(result);
         }
+
         [HttpDelete("clear")]
         public async Task<IActionResult> ClearCart()
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-                return Unauthorized("User ID claim not found or invalid.");
-            var cleared = await _cartService.ClearCartAsync(userId);
-            if (!cleared) return NotFound("Cart not found or already empty.");
-            return Ok(new { message = "Cart cleared successfully." });
+            var userId = GetUserIdFromClaims();
+            if (userId == null)
+                return Unauthorized(ApiResponse<bool>.FailureResponse("User ID claim not found or invalid"));
+
+            var result = await _cartService.ClearCartAsync(userId.Value);
+            if (!result.Success) return NotFound(result);
+
+            return Ok(result);
         }
     }
 }

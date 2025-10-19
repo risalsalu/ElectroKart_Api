@@ -7,8 +7,8 @@ namespace ElectroKart_Api.Services.Products
 {
     public interface IProductService
     {
-        Task<ApiResponse<ProductDto>> CreateProductAsync(CreateProductDto productDto);
-        Task<ApiResponse<ProductDto>> UpdateProductAsync(UpdateProductDto productDto);
+        Task<ApiResponse<string>> CreateProductAsync(CreateProductDto productDto);
+        Task<ApiResponse<string>> UpdateProductAsync(UpdateProductDto productDto);
         Task<ApiResponse<bool>> DeleteProductAsync(int id);
         Task<ApiResponse<ProductDto?>> GetProductByIdAsync(int id);
         Task<ApiResponse<IEnumerable<ProductDto>>> GetAllProductsAsync();

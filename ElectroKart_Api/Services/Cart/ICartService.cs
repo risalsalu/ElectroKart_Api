@@ -1,13 +1,16 @@
-﻿using ElectroKart_Api.Models;
+﻿using ElectroKart_Api.DTOs.Cart;
+using ElectroKart_Api.Helpers;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Services.CartServices
 {
     public interface ICartService
     {
-        Task AddToCartAsync(int userId, int productId, int quantity);
-        Task<bool> UpdateCartItemQuantityAsync(int userId, int itemId, int newQuantity);
-        Task<bool> RemoveFromCartAsync(int userId, int itemId);
-        Task<Cart?> GetCartByUserAsync(int userId);
-        Task<bool> ClearCartAsync(int userId);
+        Task<ApiResponse<CartItemDto>> AddToCartAsync(int userId, CartItemRequestDto request);
+        Task<ApiResponse<CartItemDto>> UpdateCartItemQuantityAsync(int userId, int itemId, CartItemRequestDto request);
+        Task<ApiResponse<bool>> RemoveFromCartAsync(int userId, int itemId);
+        Task<ApiResponse<List<CartItemDto>>> GetCartByUserAsync(int userId);
+        Task<ApiResponse<bool>> ClearCartAsync(int userId);
     }
 }

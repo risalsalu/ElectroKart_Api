@@ -2,7 +2,7 @@
 
 namespace ElectroKart_Api.DTOs.Cart
 {
-    public class CartItemDto
+    public class CartItemRequestDto
     {
         [Required]
         public int ProductId { get; set; }

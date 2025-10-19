@@ -10,8 +10,6 @@ namespace ElectroKart_Api.Services.Auth
 
         Task<LoginResponseDto?> Login(LoginDTO dto);
 
-        Task<LoginResponseDto?> RefreshTokenAsync(TokenRequestDto tokenRequestDto);
-
         Task<List<User>> GetAllUsers();
     }
 }

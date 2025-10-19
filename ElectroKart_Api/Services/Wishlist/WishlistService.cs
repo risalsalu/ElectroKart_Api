@@ -1,6 +1,7 @@
-﻿using ElectroKart_Api.Models;
+﻿using ElectroKart_Api.DTOs.Wishlist;
+using ElectroKart_Api.Helpers;
+using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories.Wishlist;
-
 
 namespace ElectroKart_Api.Services.Wishlist
 {
@@ -13,28 +14,68 @@ namespace ElectroKart_Api.Services.Wishlist
             _wishlistRepository = wishlistRepository;
         }
 
-        public async Task AddProductToWishlistAsync(int userId, int productId)
+        // Add a product to wishlist
+        public async Task<ApiResponse<bool>> AddProductToWishlistAsync(int userId, WishlistItemDto wishlistItemDto)
         {
-            var wishlist = await _wishlistRepository.GetWishlistByUserIdAsync(userId);
+            try
+            {
+                // Get existing wishlist or create new one
+                var wishlist = await _wishlistRepository.GetWishlistByUserIdAsync(userId)
+                               ?? await _wishlistRepository.CreateWishlistAsync(userId);
 
-            if (wishlist == null)
-            {
-                wishlist = await _wishlistRepository.CreateWishlistAsync(userId);
+                // Check if item already exists
+                bool exists = await _wishlistRepository.ItemExistsAsync(wishlist.Id, wishlistItemDto.ProductId);
+                if (exists)
+                    return ApiResponse<bool>.FailureResponse("Product already in wishlist");
+
+                // Add item
+                await _wishlistRepository.AddItemAsync(wishlist.Id, wishlistItemDto.ProductId);
+
+                return ApiResponse<bool>.SuccessResponse(true, "Product added to wishlist successfully");
             }
-            bool itemExists = await _wishlistRepository.ItemExistsAsync(wishlist.Id, productId);
-            if (itemExists)
+            catch (Exception ex)
             {
-                return;
+                return ApiResponse<bool>.FailureResponse("Failed to add product to wishlist", ex.Message);
             }
-            await _wishlistRepository.AddItemAsync(wishlist.Id, productId);
         }
-        public async Task<IEnumerable<WishlistItem>> GetAllWishlistItemsAsync(int userId)
+
+        // Get all wishlist items for a user
+        public async Task<ApiResponse<List<WishlistItemDto>>> GetAllWishlistItemsAsync(int userId)
         {
-            return await _wishlistRepository.GetAllWishlistItemsAsync(userId);
+            try
+            {
+                var items = await _wishlistRepository.GetAllWishlistItemsAsync(userId);
+
+                // Map to DTO including WishlistItem.Id
+                var result = items.Select(i => new WishlistItemDto
+                {
+                    Id = i.Id,               // Include the WishlistItem ID
+                    ProductId = i.ProductId
+                }).ToList();
+
+                return ApiResponse<List<WishlistItemDto>>.SuccessResponse(result, "Wishlist fetched successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<WishlistItemDto>>.FailureResponse("Failed to fetch wishlist", ex.Message);
+            }
         }
-        public async Task<bool> DeleteWishlistItemAsync(int itemId)
+
+        // Delete a wishlist item by its ID
+        public async Task<ApiResponse<bool>> DeleteWishlistItemAsync(int itemId)
         {
-            return await _wishlistRepository.DeleteWishlistItemAsync(itemId);
+            try
+            {
+                bool deleted = await _wishlistRepository.DeleteWishlistItemAsync(itemId);
+                if (!deleted)
+                    return ApiResponse<bool>.FailureResponse("Wishlist item not found");
+
+                return ApiResponse<bool>.SuccessResponse(true, "Wishlist item removed successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.FailureResponse("Failed to delete wishlist item", ex.Message);
+            }
         }
     }
 }
