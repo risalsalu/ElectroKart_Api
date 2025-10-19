@@ -12,14 +12,12 @@ namespace ElectroKart_Api.Models
         [Required, MaxLength(100)]
         public string PaymentId { get; set; } = string.Empty;
 
-        // FK to Orders.Id
         [Required]
         public int OrderId { get; set; }
 
         [ForeignKey("OrderId")]
         public Order? Order { get; set; }
 
-        // External gateway reference
         [Required, MaxLength(100)]
         public string OrderReference { get; set; } = string.Empty;
 
@@ -32,7 +30,6 @@ namespace ElectroKart_Api.Models
         [Required, MaxLength(50)]
         public string Status { get; set; } = "Pending";
 
-        // FK to Users.Id
         public int UserId { get; set; }
 
         [ForeignKey("UserId")]

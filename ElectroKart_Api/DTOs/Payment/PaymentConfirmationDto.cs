@@ -6,6 +6,5 @@ namespace ElectroKart_Api.DTOs.Payments
     {
         [Required]
         public string PaymentId { get; set; } = string.Empty;
-
     }
 }
