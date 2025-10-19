@@ -3,7 +3,6 @@ using ElectroKart_Api.DTOs.Auth;
 using ElectroKart_Api.Models;
 using ElectroKart_Api.Repositories.Auth;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
 
 namespace ElectroKart_Api.Services.Auth
 {
@@ -47,11 +46,7 @@ namespace ElectroKart_Api.Services.Auth
                 return null;
 
             var accessToken = _jwtGenerator.GenerateToken(user);
-
-            return new LoginResponseDto
-            {
-                AccessToken = accessToken
-            };
+            return new LoginResponseDto { AccessToken = accessToken };
         }
 
         public async Task<List<User>> GetAllUsers()
