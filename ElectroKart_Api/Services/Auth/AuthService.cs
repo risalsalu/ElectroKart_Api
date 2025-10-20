@@ -12,13 +12,17 @@ namespace ElectroKart_Api.Services.Auth
         private readonly IPasswordHasher<User> _passwordHasher;
         private readonly IJWTGenerator _jwtGenerator;
 
-        public AuthService(IAuthRepository userRepository, IPasswordHasher<User> passwordHasher, IJWTGenerator jwtGenerator)
+        public AuthService(
+            IAuthRepository userRepository,
+            IPasswordHasher<User> passwordHasher,
+            IJWTGenerator jwtGenerator)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _jwtGenerator = jwtGenerator;
         }
 
+        // Register new user
         public async Task<User?> Register(RegisterDTO dto)
         {
             var existingUser = await _userRepository.GetUserByEmailAsync(dto.Email);
@@ -36,6 +40,7 @@ namespace ElectroKart_Api.Services.Auth
             return user;
         }
 
+        // Login
         public async Task<LoginResponseDto?> Login(LoginDTO dto)
         {
             var user = await _userRepository.GetUserByEmailAsync(dto.Email);
@@ -64,11 +69,6 @@ namespace ElectroKart_Api.Services.Auth
                 Role = user.Role,
                 IsBlocked = user.IsBlocked
             };
-        }
-
-        public async Task<List<User>> GetAllUsers()
-        {
-            return await _userRepository.GetAllUsersAsync();
         }
     }
 }

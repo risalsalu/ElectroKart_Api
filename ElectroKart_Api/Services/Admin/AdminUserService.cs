@@ -39,5 +39,12 @@ namespace ElectroKart_Api.Services.Admin
             await _userRepo.UpdateAsync(user);
             return true;
         }
+        public async Task<bool> DeleteUserAsync(int userId)
+        {
+            var user = await _userRepo.GetByIdAsync(userId);
+            if (user == null) return false;
+            await _userRepo.DeleteAsync(user);
+            return true;
+        }
     }
 }

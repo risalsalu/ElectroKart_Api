@@ -58,7 +58,7 @@ builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<ElectroKart_Api.Repositories.IUserRepository, UserRepository>(); // <-- Added for User Management
+builder.Services.AddScoped<IUserRepository, UserRepository>(); // <-- User repo for dashboard & auth
 
 // ------------------------------------------------------
 // 5. Register Services
@@ -73,7 +73,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-builder.Services.AddScoped<ElectroKart_Api.Services.Admin.IAdminUserService, AdminUserService>(); // <-- Added Admin User Service
+builder.Services.AddScoped<IAdminUserService, AdminUserService>(); // <-- Admin User Management
 
 // ------------------------------------------------------
 // 6. JWT Authentication

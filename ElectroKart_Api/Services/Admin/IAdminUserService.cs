@@ -8,5 +8,6 @@ namespace ElectroKart_Api.Services.Admin
     {
         Task<List<UserDto>> GetAllUsersAsync();
         Task<bool> ToggleBlockUserAsync(int userId);
+        Task<bool> DeleteUserAsync (int userId);
     }
 }

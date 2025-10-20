@@ -37,5 +37,14 @@ namespace ElectroKart_Api.Controllers.Admin
 
             return Ok(new { message = "User status updated successfully" });
         }
+        // DELETE: api/admin/users/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var success = await _userService.DeleteUserAsync(id);
+            if (!success)
+                return NotFound(new { message = "User not found" });
+            return Ok(new { message = "User deleted successfully" });
+        }
     }
 }

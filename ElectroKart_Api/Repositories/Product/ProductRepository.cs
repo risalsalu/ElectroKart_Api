@@ -2,6 +2,7 @@
 using ElectroKart_Api.DTOs.Products;
 using ElectroKart_Api.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace ElectroKart_Api.Repositories
         }
 
         /// <summary>
-        /// Create a new product record in the database
+        /// Create a new product record
         /// </summary>
         public async Task<Product> CreateAsync(Product product)
         {
@@ -50,6 +51,17 @@ namespace ElectroKart_Api.Repositories
 
             _context.Products.Remove(product);
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        /// <summary>
+        /// Get all products (Admin Dashboard) without pagination
+        /// </summary>
+        public async Task<List<Product>> GetAllProductsAsync()
+        {
+            return await _context.Products
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         /// <summary>
@@ -99,7 +111,7 @@ namespace ElectroKart_Api.Repositories
         }
 
         /// <summary>
-        /// Search products by filters like query, category, price range
+        /// Search products by filters
         /// </summary>
         public async Task<List<Product>> SearchProductsAsync(ProductSearchDto searchDto, int pageNumber = 1, int pageSize = 20)
         {

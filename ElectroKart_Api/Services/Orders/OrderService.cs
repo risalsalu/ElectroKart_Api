@@ -55,7 +55,7 @@ namespace ElectroKart_Api.Services.Orders
                     PaymentMethod = dto.PaymentMethod,
                     Status = OrderStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
-                    TotalAmount = totalAmount,
+                    TotalAmount = totalAmount, // decimal assigned safely
                     Items = items
                 };
 
@@ -121,7 +121,7 @@ namespace ElectroKart_Api.Services.Orders
                 UserId = order.UserId,
                 ShippingAddress = order.ShippingAddress,
                 PaymentMethod = order.PaymentMethod,
-                TotalAmount = order.TotalAmount,
+                TotalAmount = order.TotalAmount.GetValueOrDefault(), // <-- Fix CS0266
                 Status = order.Status.ToString(),
                 CreatedAt = order.CreatedAt,
                 Items = order.Items.Select(i => new OrderItemResponseDto

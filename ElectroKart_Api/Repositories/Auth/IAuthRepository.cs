@@ -10,5 +10,8 @@ namespace ElectroKart_Api.Repositories.Auth
         Task UpdateUserAsync(User user);
         Task<User?> GetUserByUsernameAsync(string username);
         Task<User?> GetUserByIdAsync(int id);
+
+        // New method for deleting a user
+        Task DeleteUserAsync(User user);
     }
 }

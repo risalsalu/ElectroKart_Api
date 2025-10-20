@@ -21,7 +21,7 @@ namespace ElectroKart_Api.Controllers.Auth
             _authService = authService;
         }
 
-        // Register
+        // Register new user
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
@@ -65,26 +65,6 @@ namespace ElectroKart_Api.Controllers.Auth
                 loginResponse.Email,
                 loginResponse.Role
             }, "Login successful"));
-        }
-
-        // Get all users (Admin only)
-        [HttpGet("GetAllUsers")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-            var users = await _authService.GetAllUsers();
-
-            var sanitized = users.Select(u => new
-            {
-                u.Id,
-                u.Username,
-                u.Email,
-                u.Role,
-                u.CreatedAt,
-                u.IsBlocked
-            }).ToList();
-
-            return Ok(ApiResponse<object>.SuccessResponse(sanitized, "Users fetched successfully"));
         }
     }
 }

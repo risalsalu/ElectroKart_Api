@@ -7,6 +7,7 @@ namespace ElectroKart_Api.Repositories
 {
     public interface IProductRepository
     {
+        Task<List<Product>> GetAllProductsAsync();
         Task<Product> CreateAsync(Product product);
         Task<Product?> UpdateAsync(Product product);
         Task<bool> DeleteAsync(Product product);

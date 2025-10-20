@@ -45,5 +45,20 @@ namespace ElectroKart_Api.Repositories.Auth
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
         }
+
+        // New: Delete user
+        public async Task DeleteUserAsync(User user)
+        {
+            if (user == null) return;
+
+            // Physical delete
+            _context.Users.Remove(user);
+
+            // Optional: Soft delete instead of physical delete
+            // user.IsDeleted = true;
+            // _context.Users.Update(user);
+
+            await _context.SaveChangesAsync();
+        }
     }
 }
