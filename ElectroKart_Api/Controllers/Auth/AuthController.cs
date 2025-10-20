@@ -5,6 +5,8 @@ using ElectroKart_Api.Models;
 using ElectroKart_Api.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Controllers.Auth
 {
@@ -19,7 +21,7 @@ namespace ElectroKart_Api.Controllers.Auth
             _authService = authService;
         }
 
-        // Register endpoint
+        // Register
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
@@ -35,13 +37,14 @@ namespace ElectroKart_Api.Controllers.Auth
                 user.Id,
                 user.Username,
                 user.Email,
+                user.Role,
                 user.CreatedAt
             };
 
             return Ok(ApiResponse<object>.SuccessResponse(result, "Registered successfully"));
         }
 
-        // Login endpoint (return token only)
+        // Login
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
@@ -52,8 +55,16 @@ namespace ElectroKart_Api.Controllers.Auth
             if (loginResponse == null)
                 return BadRequest(ApiResponse<object>.FailureResponse("Invalid Email or Password"));
 
-            // Return only the token string (plain text)
-            return Content(loginResponse.AccessToken, "text/plain");
+            if (!string.IsNullOrEmpty(loginResponse.ErrorMessage))
+                return Unauthorized(ApiResponse<object>.FailureResponse(loginResponse.ErrorMessage));
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                loginResponse.AccessToken,
+                loginResponse.Username,
+                loginResponse.Email,
+                loginResponse.Role
+            }, "Login successful"));
         }
 
         // Get all users (Admin only)
@@ -62,12 +73,15 @@ namespace ElectroKart_Api.Controllers.Auth
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _authService.GetAllUsers();
+
             var sanitized = users.Select(u => new
             {
                 u.Id,
                 u.Username,
                 u.Email,
-                u.CreatedAt
+                u.Role,
+                u.CreatedAt,
+                u.IsBlocked
             }).ToList();
 
             return Ok(ApiResponse<object>.SuccessResponse(sanitized, "Users fetched successfully"));

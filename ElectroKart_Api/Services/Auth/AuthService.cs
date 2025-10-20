@@ -45,8 +45,25 @@ namespace ElectroKart_Api.Services.Auth
             if (verificationResult != PasswordVerificationResult.Success)
                 return null;
 
+            if (user.IsBlocked)
+            {
+                return new LoginResponseDto
+                {
+                    ErrorMessage = "Your account has been blocked. Please contact support.",
+                    IsBlocked = true
+                };
+            }
+
             var accessToken = _jwtGenerator.GenerateToken(user);
-            return new LoginResponseDto { AccessToken = accessToken };
+
+            return new LoginResponseDto
+            {
+                AccessToken = accessToken,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
+                IsBlocked = user.IsBlocked
+            };
         }
 
         public async Task<List<User>> GetAllUsers()

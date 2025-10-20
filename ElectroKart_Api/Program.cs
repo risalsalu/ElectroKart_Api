@@ -9,6 +9,7 @@ using ElectroKart_Api.Repositories.Orders;
 using ElectroKart_Api.Repositories.Payments;
 using ElectroKart_Api.Repositories.Wishlist;
 using ElectroKart_Api.Services;
+using ElectroKart_Api.Services.Admin;
 using ElectroKart_Api.Services.Auth;
 using ElectroKart_Api.Services.CartServices;
 using ElectroKart_Api.Services.Orders;
@@ -57,6 +58,7 @@ builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ElectroKart_Api.Repositories.IUserRepository, UserRepository>(); // <-- Added for User Management
 
 // ------------------------------------------------------
 // 5. Register Services
@@ -70,6 +72,8 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
+builder.Services.AddScoped<ElectroKart_Api.Services.Admin.IAdminUserService, AdminUserService>(); // <-- Added Admin User Service
 
 // ------------------------------------------------------
 // 6. JWT Authentication
