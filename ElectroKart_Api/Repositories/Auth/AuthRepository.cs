@@ -51,12 +51,8 @@ namespace ElectroKart_Api.Repositories.Auth
         {
             if (user == null) return;
 
-            // Physical delete
             _context.Users.Remove(user);
 
-            // Optional: Soft delete instead of physical delete
-            // user.IsDeleted = true;
-            // _context.Users.Update(user);
 
             await _context.SaveChangesAsync();
         }

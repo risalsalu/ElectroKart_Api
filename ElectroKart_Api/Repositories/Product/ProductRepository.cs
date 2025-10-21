@@ -18,9 +18,6 @@ namespace ElectroKart_Api.Repositories
             _context = context;
         }
 
-        /// <summary>
-        /// Create a new product record
-        /// </summary>
         public async Task<Product> CreateAsync(Product product)
         {
             if (product == null) throw new ArgumentNullException(nameof(product));
@@ -30,9 +27,6 @@ namespace ElectroKart_Api.Repositories
             return product;
         }
 
-        /// <summary>
-        /// Update an existing product
-        /// </summary>
         public async Task<Product?> UpdateAsync(Product product)
         {
             if (product == null) throw new ArgumentNullException(nameof(product));
@@ -42,9 +36,6 @@ namespace ElectroKart_Api.Repositories
             return product;
         }
 
-        /// <summary>
-        /// Delete a product from the database
-        /// </summary>
         public async Task<bool> DeleteAsync(Product product)
         {
             if (product == null) return false;
@@ -53,9 +44,6 @@ namespace ElectroKart_Api.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
-        /// <summary>
-        /// Get all products (Admin Dashboard) without pagination
-        /// </summary>
         public async Task<List<Product>> GetAllProductsAsync()
         {
             return await _context.Products
@@ -64,9 +52,6 @@ namespace ElectroKart_Api.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Get all products with pagination
-        /// </summary>
         public async Task<List<Product>> GetAllAsync(int pageNumber = 1, int pageSize = 20)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -81,9 +66,6 @@ namespace ElectroKart_Api.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Get product by ID
-        /// </summary>
         public async Task<Product?> GetByIdAsync(int id)
         {
             return await _context.Products
@@ -92,9 +74,6 @@ namespace ElectroKart_Api.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        /// <summary>
-        /// Get products by category ID with pagination
-        /// </summary>
         public async Task<List<Product>> GetByCategoryIdAsync(int categoryId, int pageNumber = 1, int pageSize = 20)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -110,9 +89,6 @@ namespace ElectroKart_Api.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Search products by filters
-        /// </summary>
         public async Task<List<Product>> SearchProductsAsync(ProductSearchDto searchDto, int pageNumber = 1, int pageSize = 20)
         {
             var query = _context.Products.Include(p => p.Category).AsQueryable();

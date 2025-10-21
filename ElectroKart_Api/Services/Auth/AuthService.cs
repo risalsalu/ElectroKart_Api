@@ -22,7 +22,6 @@ namespace ElectroKart_Api.Services.Auth
             _jwtGenerator = jwtGenerator;
         }
 
-        // Register new user
         public async Task<User?> Register(RegisterDTO dto)
         {
             var existingUser = await _userRepository.GetUserByEmailAsync(dto.Email);
@@ -40,7 +39,6 @@ namespace ElectroKart_Api.Services.Auth
             return user;
         }
 
-        // Login
         public async Task<LoginResponseDto?> Login(LoginDTO dto)
         {
             var user = await _userRepository.GetUserByEmailAsync(dto.Email);

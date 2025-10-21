@@ -1,5 +1,4 @@
-﻿// File: Middleware/ErrorHandlingMiddleware.cs
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 
 namespace ElectroKart_Api.Middleware

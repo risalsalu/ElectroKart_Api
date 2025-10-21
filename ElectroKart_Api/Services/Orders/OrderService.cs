@@ -121,7 +121,7 @@ namespace ElectroKart_Api.Services.Orders
                 UserId = order.UserId,
                 ShippingAddress = order.ShippingAddress,
                 PaymentMethod = order.PaymentMethod,
-                TotalAmount = order.TotalAmount.GetValueOrDefault(), // <-- Fix CS0266
+                TotalAmount = order.TotalAmount.GetValueOrDefault(), 
                 Status = order.Status.ToString(),
                 CreatedAt = order.CreatedAt,
                 Items = order.Items.Select(i => new OrderItemResponseDto

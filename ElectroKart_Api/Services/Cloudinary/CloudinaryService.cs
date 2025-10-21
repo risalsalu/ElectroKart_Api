@@ -28,9 +28,6 @@ namespace ElectroKart_Api.Services
             };
         }
 
-        /// <summary>
-        /// Upload a new image to Cloudinary.
-        /// </summary>
         public async Task<ImageUploadResult> UploadImageAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -46,9 +43,6 @@ namespace ElectroKart_Api.Services
             return await _cloudinary.UploadAsync(uploadParams);
         }
 
-        /// <summary>
-        /// Delete an image from Cloudinary using its public ID.
-        /// </summary>
         public async Task<DeletionResult> DeleteImageAsync(string publicId)
         {
             if (string.IsNullOrEmpty(publicId))
@@ -58,20 +52,15 @@ namespace ElectroKart_Api.Services
             return await _cloudinary.DestroyAsync(deleteParams);
         }
 
-        /// <summary>
-        /// Update product image: delete old image if exists, then upload new image.
-        /// </summary>
         public async Task<(ImageUploadResult uploadResult, DeletionResult? deletionResult)> ReplaceImageAsync(IFormFile newFile, string? oldPublicId)
         {
             DeletionResult? deletionResult = null;
 
-            // Delete old image if exists
             if (!string.IsNullOrEmpty(oldPublicId))
             {
                 deletionResult = await DeleteImageAsync(oldPublicId);
             }
 
-            // Upload new image
             var uploadResult = await UploadImageAsync(newFile);
             return (uploadResult, deletionResult);
         }

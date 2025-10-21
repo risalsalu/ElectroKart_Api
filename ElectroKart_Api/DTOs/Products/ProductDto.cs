@@ -1,8 +1,8 @@
-﻿namespace ElectroKart_Api.DTOs.Products
+﻿
+
+namespace ElectroKart_Api.DTOs.Products
 {
-    /// <summary>
-    /// DTO representing a product returned from the API.
-    /// </summary>
+
     public class ProductDto
     {
         public int Id { get; set; }

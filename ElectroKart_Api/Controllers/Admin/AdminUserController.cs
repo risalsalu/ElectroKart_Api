@@ -19,7 +19,6 @@ namespace ElectroKart_Api.Controllers.Admin
             _userService = userService;
         }
 
-        // GET: api/admin/users
         [HttpGet]
         public async Task<ActionResult<List<UserDto>>> GetAllUsers()
         {
@@ -27,7 +26,6 @@ namespace ElectroKart_Api.Controllers.Admin
             return Ok(users);
         }
 
-        // PUT: api/admin/users/toggle-block/{id}
         [HttpPut("toggle-block/{id}")]
         public async Task<IActionResult> ToggleBlockUser(int id)
         {
@@ -37,7 +35,7 @@ namespace ElectroKart_Api.Controllers.Admin
 
             return Ok(new { message = "User status updated successfully" });
         }
-        // DELETE: api/admin/users/{id}
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

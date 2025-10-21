@@ -26,21 +26,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ------------------------------------------------------
-// 1. Configure Database
-// ------------------------------------------------------
+// ===== Database =====
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// ------------------------------------------------------
-// 2. Add Controllers
-// ------------------------------------------------------
+// ===== Controllers =====
 builder.Services.AddControllers();
 
-// ------------------------------------------------------
-// 3. Configure App Settings
-// ------------------------------------------------------
+// ===== App Settings =====
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("RazorpaySettings")
 );
@@ -48,9 +42,7 @@ builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
 );
 
-// ------------------------------------------------------
-// 4. Register Repositories
-// ------------------------------------------------------
+// ===== Repositories =====
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -58,11 +50,9 @@ builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // <-- User repo for dashboard & auth
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-// ------------------------------------------------------
-// 5. Register Services
-// ------------------------------------------------------
+// ===== Services =====
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -72,12 +62,21 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
-builder.Services.AddScoped<IAdminUserService, AdminUserService>(); // <-- Admin User Management
+// ===== CORS =====
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // React dev server
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
-// ------------------------------------------------------
-// 6. JWT Authentication
-// ------------------------------------------------------
+// ===== Authentication =====
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -93,11 +92,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
             )
         };
+
+        // Optional: automatically read token from cookie if header is not present
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Try read token from cookie first
+                var token = context.Request.Cookies["jwtToken"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
-// ------------------------------------------------------
-// 7. Swagger / OpenAPI
-// ------------------------------------------------------
+// ===== Swagger =====
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -107,6 +119,7 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1"
     });
 
+    // JWT Authentication in Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -114,7 +127,7 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer",
         BearerFormat = "JWT",
-        Description = "Enter 'Bearer {token}' to authenticate."
+        Description = "Enter 'Bearer {token}' to authenticate"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -133,31 +146,30 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ------------------------------------------------------
-// 8. Build App
-// ------------------------------------------------------
 var app = builder.Build();
 
-// ------------------------------------------------------
-// 9. Middleware Pipeline
-// ------------------------------------------------------
+// ===== Middleware =====
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Global Error Handling
+// Global error handler logs full exception
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
 app.UseRouting();
 
+// ===== CORS Middleware =====
+app.UseCors("AllowFrontend");
+
+// ===== Authentication & Authorization =====
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Custom Role Middleware
+// Optional role authorization
 app.UseMiddleware<RoleAuthorizationMiddleware>();
 
 app.MapControllers();

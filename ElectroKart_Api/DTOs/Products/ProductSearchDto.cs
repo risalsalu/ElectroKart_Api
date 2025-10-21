@@ -1,8 +1,6 @@
 ﻿namespace ElectroKart_Api.DTOs.Products
 {
-    /// <summary>
-    /// DTO for searching products with optional filters.
-    /// </summary>
+
     public class ProductSearchDto
     {
         public string? Name { get; set; }

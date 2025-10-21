@@ -14,21 +14,17 @@ namespace ElectroKart_Api.Services.Wishlist
             _wishlistRepository = wishlistRepository;
         }
 
-        // Add a product to wishlist
         public async Task<ApiResponse<bool>> AddProductToWishlistAsync(int userId, WishlistItemDto wishlistItemDto)
         {
             try
             {
-                // Get existing wishlist or create new one
                 var wishlist = await _wishlistRepository.GetWishlistByUserIdAsync(userId)
                                ?? await _wishlistRepository.CreateWishlistAsync(userId);
 
-                // Check if item already exists
                 bool exists = await _wishlistRepository.ItemExistsAsync(wishlist.Id, wishlistItemDto.ProductId);
                 if (exists)
                     return ApiResponse<bool>.FailureResponse("Product already in wishlist");
 
-                // Add item
                 await _wishlistRepository.AddItemAsync(wishlist.Id, wishlistItemDto.ProductId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "Product added to wishlist successfully");
@@ -39,17 +35,15 @@ namespace ElectroKart_Api.Services.Wishlist
             }
         }
 
-        // Get all wishlist items for a user
         public async Task<ApiResponse<List<WishlistItemDto>>> GetAllWishlistItemsAsync(int userId)
         {
             try
             {
                 var items = await _wishlistRepository.GetAllWishlistItemsAsync(userId);
 
-                // Map to DTO including WishlistItem.Id
                 var result = items.Select(i => new WishlistItemDto
                 {
-                    Id = i.Id,               // Include the WishlistItem ID
+                    Id = i.Id,              
                     ProductId = i.ProductId
                 }).ToList();
 
@@ -61,7 +55,6 @@ namespace ElectroKart_Api.Services.Wishlist
             }
         }
 
-        // Delete a wishlist item by its ID
         public async Task<ApiResponse<bool>> DeleteWishlistItemAsync(int itemId)
         {
             try

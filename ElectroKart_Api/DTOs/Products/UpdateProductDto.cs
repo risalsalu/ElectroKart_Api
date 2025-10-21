@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace ElectroKart_Api.DTOs.Products
 {
-    /// <summary>
-    /// DTO for updating an existing product.
-    /// Supports optional image replacement.
-    /// </summary>
+
     public class UpdateProductDto
     {
         [Required(ErrorMessage = "Product ID is required.")]

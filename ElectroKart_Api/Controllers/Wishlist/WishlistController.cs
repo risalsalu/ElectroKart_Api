@@ -20,7 +20,6 @@ namespace ElectroKart_Api.Controllers
             _wishlistService = wishlistService;
         }
 
-        // Add a product to wishlist
         [HttpPost("add")]
         public async Task<IActionResult> AddToWishlist([FromBody] WishlistItemDto wishlistItemDto)
         {
@@ -36,17 +35,15 @@ namespace ElectroKart_Api.Controllers
             if (!result.Success)
                 return BadRequest(result);
 
-            // Return the wishlist item with ProductId and (optionally) Id if available
             var responseData = new WishlistItemDto
             {
-                Id = result.Data ? 0 : 0, // Optional: Update service to return actual WishlistItem.Id if needed
+                Id = result.Data ? 0 : 0,
                 ProductId = wishlistItemDto.ProductId
             };
 
             return Ok(ApiResponse<WishlistItemDto>.SuccessResponse(responseData, "Product added to wishlist successfully"));
         }
 
-        // Get all wishlist items for the logged-in user
         [HttpGet]
         public async Task<IActionResult> GetAllWishlistItems()
         {
@@ -62,7 +59,6 @@ namespace ElectroKart_Api.Controllers
             return Ok(result);
         }
 
-        // Delete a specific wishlist item by its ID
         [HttpDelete("{itemId}")]
         public async Task<IActionResult> DeleteWishlistItem(int itemId)
         {
