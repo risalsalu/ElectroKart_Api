@@ -11,6 +11,7 @@ namespace ElectroKart_Api.Repositories.Orders
         Task<List<Order>> GetAllOrdersAsync();
         Task<Order?> GetOrderByIdAsync(int orderId);
         Task UpdateOrderStatusAsync(Order order, OrderStatus status);
+
+        Task<bool> DeleteOrderAsync(int orderId);
     }
 }
-

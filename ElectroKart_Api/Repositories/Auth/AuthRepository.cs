@@ -46,7 +46,6 @@ namespace ElectroKart_Api.Repositories.Auth
             return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        // New: Delete user
         public async Task DeleteUserAsync(User user)
         {
             if (user == null) return;

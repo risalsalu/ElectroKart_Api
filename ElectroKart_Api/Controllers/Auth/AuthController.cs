@@ -20,7 +20,6 @@ namespace ElectroKart_Api.Controllers.Auth
             _authService = authService;
         }
 
-        // POST: api/Auth/Register
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
@@ -43,7 +42,6 @@ namespace ElectroKart_Api.Controllers.Auth
             return Ok(ApiResponse<object>.SuccessResponse(result, "Registered successfully"));
         }
 
-        // POST: api/Auth/Login
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {

@@ -56,5 +56,19 @@ namespace ElectroKart_Api.Repositories.Orders
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> DeleteOrderAsync(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null) return false;
+
+            _context.OrderItems.RemoveRange(order.Items);
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

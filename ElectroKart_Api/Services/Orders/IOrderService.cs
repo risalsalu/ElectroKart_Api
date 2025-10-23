@@ -12,5 +12,7 @@ namespace ElectroKart_Api.Services.Orders
         Task<ApiResponse<OrderResponseDto>> GetOrderByIdAsync(string orderId, int userId, bool isAdmin = false);
         Task<ApiResponse<bool>> UpdateOrderStatusAsync(string orderId, string status);
         Task<ApiResponse<List<OrderResponseDto>>> GetAllOrdersAsync(); // Admin only
+
+        Task<ApiResponse<bool>> DeleteOrderAsync(string orderId);
     }
 }

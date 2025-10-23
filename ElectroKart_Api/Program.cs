@@ -26,15 +26,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ===== Database =====
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// ===== Controllers =====
 builder.Services.AddControllers();
 
-// ===== App Settings =====
 builder.Services.Configure<RazorpaySettings>(
     builder.Configuration.GetSection("RazorpaySettings")
 );
@@ -42,7 +39,6 @@ builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings")
 );
 
-// ===== Repositories =====
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -52,7 +48,6 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-// ===== Services =====
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IJWTGenerator, JWTGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -64,19 +59,17 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
-// ===== CORS =====
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // React dev server
+        policy.WithOrigins("http://localhost:5173") 
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// ===== Authentication =====
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -93,12 +86,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             )
         };
 
-        // Optional: automatically read token from cookie if header is not present
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                // Try read token from cookie first
                 var token = context.Request.Cookies["jwtToken"];
                 if (!string.IsNullOrEmpty(token))
                 {
@@ -109,7 +100,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ===== Swagger =====
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -119,7 +109,6 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1"
     });
 
-    // JWT Authentication in Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -148,28 +137,23 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// ===== Middleware =====
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Global error handler logs full exception
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
 app.UseRouting();
 
-// ===== CORS Middleware =====
 app.UseCors("AllowFrontend");
 
-// ===== Authentication & Authorization =====
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Optional role authorization
 app.UseMiddleware<RoleAuthorizationMiddleware>();
 
 app.MapControllers();

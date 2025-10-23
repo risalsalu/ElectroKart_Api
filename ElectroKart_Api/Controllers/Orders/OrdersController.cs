@@ -15,13 +15,13 @@ namespace ElectroKart_Api.Controllers.Orders
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
+
         public OrdersController(IOrderService orderService)
         {
             _orderService = orderService;
         }
 
         private int GetUserId() => int.Parse(User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
-
         private bool IsAdmin() => User.IsInRole("Admin");
 
         [HttpPost("checkout")]
@@ -66,6 +66,15 @@ namespace ElectroKart_Api.Controllers.Orders
         {
             var response = await _orderService.GetAllOrdersAsync();
             if (!response.Success) return NotFound(response);
+            return Ok(response);
+        }
+
+        [HttpDelete("{orderId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteOrder(string orderId)
+        {
+            var response = await _orderService.DeleteOrderAsync(orderId);
+            if (!response.Success) return BadRequest(response);
             return Ok(response);
         }
     }

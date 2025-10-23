@@ -55,12 +55,11 @@ namespace ElectroKart_Api.Services.Orders
                     PaymentMethod = dto.PaymentMethod,
                     Status = OrderStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
-                    TotalAmount = totalAmount, // decimal assigned safely
+                    TotalAmount = totalAmount,
                     Items = items
                 };
 
                 var created = await _orderRepository.CreateOrderAsync(order);
-
                 return ApiResponse<OrderResponseDto>.SuccessResponse(MapOrderToDto(created), "Order created successfully");
             }
             catch (Exception ex)
@@ -82,7 +81,8 @@ namespace ElectroKart_Api.Services.Orders
                 return ApiResponse<OrderResponseDto>.FailureResponse("Invalid order ID");
 
             var order = await _orderRepository.GetOrderByIdAsync(id);
-            if (order == null) return ApiResponse<OrderResponseDto>.FailureResponse("Order not found");
+            if (order == null)
+                return ApiResponse<OrderResponseDto>.FailureResponse("Order not found");
 
             if (!isAdmin && order.UserId != userId)
                 return ApiResponse<OrderResponseDto>.FailureResponse("Unauthorized access");
@@ -113,6 +113,18 @@ namespace ElectroKart_Api.Services.Orders
             return ApiResponse<List<OrderResponseDto>>.SuccessResponse(dtos, "All orders fetched successfully");
         }
 
+        public async Task<ApiResponse<bool>> DeleteOrderAsync(string orderId)
+        {
+            if (!TryParseOrderId(orderId, out int id))
+                return ApiResponse<bool>.FailureResponse("Invalid order ID");
+
+            var success = await _orderRepository.DeleteOrderAsync(id);
+            if (!success)
+                return ApiResponse<bool>.FailureResponse("Order not found or failed to delete");
+
+            return ApiResponse<bool>.SuccessResponse(true, "Order deleted successfully");
+        }
+
         private OrderResponseDto MapOrderToDto(Order order)
         {
             return new OrderResponseDto
@@ -121,7 +133,7 @@ namespace ElectroKart_Api.Services.Orders
                 UserId = order.UserId,
                 ShippingAddress = order.ShippingAddress,
                 PaymentMethod = order.PaymentMethod,
-                TotalAmount = order.TotalAmount.GetValueOrDefault(), 
+                TotalAmount = order.TotalAmount.GetValueOrDefault(),
                 Status = order.Status.ToString(),
                 CreatedAt = order.CreatedAt,
                 Items = order.Items.Select(i => new OrderItemResponseDto
