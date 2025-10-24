@@ -42,7 +42,15 @@ namespace ElectroKart_Api.Controllers.Admin
             var success = await _userService.DeleteUserAsync(id);
             if (!success)
                 return NotFound(new { message = "User not found" });
+
             return Ok(new { message = "User deleted successfully" });
+        }
+
+        [HttpGet("/api/admin/dashboard")]
+        public async Task<ActionResult<DashboardStatsDto>> GetDashboardStats()
+        {
+            var stats = await _userService.GetDashboardStatsAsync();
+            return Ok(stats);
         }
     }
 }

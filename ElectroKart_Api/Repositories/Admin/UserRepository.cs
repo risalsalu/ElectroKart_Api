@@ -15,26 +15,18 @@ namespace ElectroKart_Api.Repositories
             _context = context;
         }
 
-        public async Task<int> GetCountAsync()
-        {
-            return await _context.Users.CountAsync();
-        }
+        public async Task<int> GetCountAsync() => await _context.Users.CountAsync();
 
-        public async Task<List<User>> GetAllUsersAsync()
-        {
-            return await _context.Users.ToListAsync();
-        }
+        public async Task<List<User>> GetAllUsersAsync() => await _context.Users.ToListAsync();
 
-        public async Task<User?> GetByIdAsync(int id)
-        {
-            return await _context.Users.FindAsync(id);
-        }
+        public async Task<User?> GetByIdAsync(int id) => await _context.Users.FindAsync(id);
 
         public async Task UpdateAsync(User user)
         {
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
+
         public async Task DeleteAsync(User user)
         {
             _context.Users.Remove(user);
