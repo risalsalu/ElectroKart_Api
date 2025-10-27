@@ -11,6 +11,7 @@ using ElectroKart_Api.Repositories.Wishlist;
 using ElectroKart_Api.Services;
 using ElectroKart_Api.Services.Admin;
 using ElectroKart_Api.Services.Auth;
+using ElectroKart_Api.Services.Cart;
 using ElectroKart_Api.Services.CartServices;
 using ElectroKart_Api.Services.Orders;
 using ElectroKart_Api.Services.Payments;
@@ -32,12 +33,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 
-builder.Services.Configure<RazorpaySettings>(
-    builder.Configuration.GetSection("RazorpaySettings")
-);
-builder.Services.Configure<CloudinarySettings>(
-    builder.Configuration.GetSection("CloudinarySettings")
-);
+builder.Services.Configure<RazorpaySettings>(builder.Configuration.GetSection("RazorpaySettings"));
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -73,6 +70,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -81,16 +80,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
-            )
+            IssuerSigningKey = new SymmetricSecurityKey(key)
         };
 
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var token = context.Request.Cookies["jwtToken"];
+                var token = context.Request.Cookies["jwt"];
                 if (!string.IsNullOrEmpty(token))
                 {
                     context.Token = token;

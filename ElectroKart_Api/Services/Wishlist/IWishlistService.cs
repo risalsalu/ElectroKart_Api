@@ -9,6 +9,6 @@ namespace ElectroKart_Api.Services.Wishlist
     {
         Task<ApiResponse<bool>> AddProductToWishlistAsync(int userId, WishlistItemDto wishlistItemDto);
         Task<ApiResponse<List<WishlistItemDto>>> GetAllWishlistItemsAsync(int userId);
-        Task<ApiResponse<bool>> DeleteWishlistItemAsync(int itemId);
+        Task<ApiResponse<bool>> DeleteWishlistItemAsync(int userId, int productId);
     }
 }

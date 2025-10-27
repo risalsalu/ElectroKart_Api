@@ -2,6 +2,9 @@
 using ElectroKart_Api.Models;
 using Microsoft.EntityFrameworkCore;
 using WishlistModel = ElectroKart_Api.Models.Wishlist;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Repositories.Wishlist
 {
@@ -13,6 +16,7 @@ namespace ElectroKart_Api.Repositories.Wishlist
         {
             _context = context;
         }
+
         public async Task<WishlistModel?> GetWishlistByUserIdAsync(int userId)
         {
             return await _context.Wishlists
@@ -20,6 +24,7 @@ namespace ElectroKart_Api.Repositories.Wishlist
                 .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(w => w.UserId == userId);
         }
+
         public async Task<WishlistModel> CreateWishlistAsync(int userId)
         {
             var wishlist = new WishlistModel { UserId = userId };
@@ -27,6 +32,7 @@ namespace ElectroKart_Api.Repositories.Wishlist
             await _context.SaveChangesAsync();
             return wishlist;
         }
+
         public async Task AddItemAsync(int wishlistId, int productId)
         {
             var wishlistItem = new WishlistItem
@@ -38,6 +44,7 @@ namespace ElectroKart_Api.Repositories.Wishlist
             await _context.WishlistItems.AddAsync(wishlistItem);
             await _context.SaveChangesAsync();
         }
+
         public async Task<bool> ItemExistsAsync(int wishlistId, int productId)
         {
             return await _context.WishlistItems
@@ -53,11 +60,13 @@ namespace ElectroKart_Api.Repositories.Wishlist
                 .ToListAsync();
         }
 
-        public async Task<bool> DeleteWishlistItemAsync(int itemId)
+        public async Task<bool> DeleteWishlistItemByProductIdAsync(int userId, int productId)
         {
-            var item = await _context.WishlistItems.FindAsync(itemId);
-            if (item == null)
-                return false;
+            var wishlist = await GetWishlistByUserIdAsync(userId);
+            if (wishlist == null) return false;
+
+            var item = wishlist.Items.FirstOrDefault(i => i.ProductId == productId);
+            if (item == null) return false;
 
             _context.WishlistItems.Remove(item);
             await _context.SaveChangesAsync();

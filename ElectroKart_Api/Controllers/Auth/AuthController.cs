@@ -3,8 +3,9 @@ using ElectroKart_Api.DTOs.Auth;
 using ElectroKart_Api.Helpers;
 using ElectroKart_Api.Models;
 using ElectroKart_Api.Services.Auth;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace ElectroKart_Api.Controllers.Auth
@@ -55,13 +56,33 @@ namespace ElectroKart_Api.Controllers.Auth
             if (!string.IsNullOrEmpty(loginResponse.ErrorMessage))
                 return Unauthorized(ApiResponse<object>.FailureResponse(loginResponse.ErrorMessage));
 
+            Response.Cookies.Append("jwt", loginResponse.AccessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, 
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddHours(1)
+            });
+
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                loginResponse.AccessToken,
+                loginResponse.AccessToken, 
                 loginResponse.Username,
                 loginResponse.Email,
                 loginResponse.Role
             }, "Login successful"));
+        }
+
+        [HttpPost("Logout")]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Delete("jwt", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Logged out successfully"));
         }
     }
 }
