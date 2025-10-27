@@ -21,7 +21,6 @@ namespace ElectroKart_Api.Models
         public string Role { get; set; } = "User";
 
         public bool IsBlocked { get; set; } = false;
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public string? RefreshToken { get; set; }

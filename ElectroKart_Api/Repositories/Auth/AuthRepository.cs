@@ -49,10 +49,7 @@ namespace ElectroKart_Api.Repositories.Auth
         public async Task DeleteUserAsync(User user)
         {
             if (user == null) return;
-
             _context.Users.Remove(user);
-
-
             await _context.SaveChangesAsync();
         }
     }

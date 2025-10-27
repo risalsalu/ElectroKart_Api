@@ -60,7 +60,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") 
+        policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -71,7 +71,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -82,12 +81,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
-
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var token = context.Request.Cookies["jwt"];
+                var token = context.Request.Cookies["AccessToken"];
                 if (!string.IsNullOrEmpty(token))
                 {
                     context.Token = token;
@@ -105,7 +103,6 @@ builder.Services.AddSwaggerGen(options =>
         Title = "ElectroKart API",
         Version = "v1"
     });
-
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -115,7 +112,6 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         Description = "Enter 'Bearer {token}' to authenticate"
     });
-
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

@@ -15,6 +15,13 @@ namespace ElectroKart_Api.Controllers.Auth
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private CookieOptions CookieOptions => new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/"
+        };
 
         public AuthController(IAuthService authService)
         {
@@ -28,19 +35,14 @@ namespace ElectroKart_Api.Controllers.Auth
                 return BadRequest(ApiResponse<User>.FailureResponse("Invalid data"));
 
             var user = await _authService.Register(dto);
-            if (user == null)
-                return BadRequest(ApiResponse<User>.FailureResponse("Email already in use."));
 
-            var result = new
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
                 user.Id,
                 user.Username,
                 user.Email,
-                user.Role,
-                user.CreatedAt
-            };
-
-            return Ok(ApiResponse<object>.SuccessResponse(result, "Registered successfully"));
+                user.Role
+            }, "Registered successfully"));
         }
 
         [HttpPost("Login")]
@@ -50,38 +52,72 @@ namespace ElectroKart_Api.Controllers.Auth
                 return BadRequest(ApiResponse<object>.FailureResponse("Invalid data"));
 
             var loginResponse = await _authService.Login(dto);
-            if (loginResponse == null)
-                return BadRequest(ApiResponse<object>.FailureResponse("Invalid Email or Password"));
 
-            if (!string.IsNullOrEmpty(loginResponse.ErrorMessage))
-                return Unauthorized(ApiResponse<object>.FailureResponse(loginResponse.ErrorMessage));
+            var accessCookieOptions = CookieOptions;
+            accessCookieOptions.Expires = DateTime.UtcNow.AddMinutes(15);
+            Response.Cookies.Append("AccessToken", loginResponse.AccessToken!, accessCookieOptions);
 
-            Response.Cookies.Append("jwt", loginResponse.AccessToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, 
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddHours(1)
-            });
+            var refreshCookieOptions = CookieOptions;
+            refreshCookieOptions.Expires = DateTime.UtcNow.AddDays(7);
+            Response.Cookies.Append("RefreshToken", loginResponse.RefreshToken!, refreshCookieOptions);
 
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                loginResponse.AccessToken, 
+                loginResponse.AccessToken,
+                loginResponse.RefreshToken,
                 loginResponse.Username,
                 loginResponse.Email,
                 loginResponse.Role
             }, "Login successful"));
         }
 
+        [HttpPost("Refresh")]
+        public async Task<IActionResult> Refresh([FromBody] TokenRefreshDto? dto)
+        {
+            string? expiredToken = dto?.AccessToken;
+            string? refreshToken = dto?.RefreshToken;
+
+            if (string.IsNullOrEmpty(expiredToken))
+            {
+                expiredToken = Request.Cookies["AccessToken"];
+            }
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                refreshToken = Request.Cookies["RefreshToken"];
+            }
+
+            if (string.IsNullOrEmpty(expiredToken) || string.IsNullOrEmpty(refreshToken))
+                return BadRequest(ApiResponse<object>.FailureResponse("Invalid token data."));
+
+            var newTokens = await _authService.RefreshToken(expiredToken, refreshToken);
+
+            var accessCookieOptions = CookieOptions;
+            accessCookieOptions.Expires = DateTime.UtcNow.AddMinutes(15);
+            Response.Cookies.Append("AccessToken", newTokens.AccessToken!, accessCookieOptions);
+
+            var refreshCookieOptions = CookieOptions;
+            refreshCookieOptions.Expires = DateTime.UtcNow.AddDays(7);
+            Response.Cookies.Append("RefreshToken", newTokens.RefreshToken!, refreshCookieOptions);
+
+            return Ok(ApiResponse<object>.SuccessResponse(newTokens, "Token refreshed successfully"));
+        }
+
         [HttpPost("Logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("jwt", new CookieOptions
+            var expiredCookie = new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.None
-            });
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1),
+                Path = "/"
+            };
+
+            Response.Cookies.Append("AccessToken", "", expiredCookie);
+            Response.Cookies.Append("RefreshToken", "", expiredCookie);
+
             return Ok(ApiResponse<object>.SuccessResponse(null, "Logged out successfully"));
         }
     }
