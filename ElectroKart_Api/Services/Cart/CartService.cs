@@ -13,6 +13,7 @@ namespace ElectroKart_Api.Services.Cart
     public class CartService : ICartService
     {
         private readonly ICartRepository _cartRepository;
+        private readonly string _baseUrl = "http://localhost:7289"; 
 
         public CartService(ICartRepository cartRepository)
         {
@@ -33,15 +34,18 @@ namespace ElectroKart_Api.Services.Cart
             cart = await _cartRepository.GetCartByUserIdAsync(userId);
             var addedItem = cart.Items.First(i => i.ProductId == request.ProductId);
 
-            var response = new CartItemDto
+            var dto = new CartItemDto
             {
-                Id = addedItem.Id,
+                ItemId = addedItem.Id,
                 ProductId = addedItem.ProductId,
+                ProductName = addedItem.Product?.Name ?? "Unknown",
+                ProductImage = FormatImageUrl(addedItem.Product?.ImageUrl),
+                Price = addedItem.Product?.Price ?? 0,
                 Quantity = addedItem.Quantity,
-                CartCount = cart.Items.Count
+                Subtotal = (addedItem.Product?.Price ?? 0) * addedItem.Quantity
             };
 
-            return ApiResponse<CartItemDto>.SuccessResponse(response, "Product added to cart successfully.");
+            return ApiResponse<CartItemDto>.SuccessResponse(dto, "Product added to cart successfully.");
         }
 
         public async Task<ApiResponse<CartItemDto>> UpdateCartItemQuantityAsync(int userId, int itemId, CartItemRequestDto request)
@@ -56,15 +60,21 @@ namespace ElectroKart_Api.Services.Cart
 
             await _cartRepository.UpdateItemQuantityAsync(itemId, request.Quantity);
 
-            var response = new CartItemDto
+            var updatedItem = await _cartRepository.GetCartByUserIdAsync(userId);
+            var updated = updatedItem.Items.First(i => i.Id == itemId);
+
+            var dto = new CartItemDto
             {
-                Id = item.Id,
-                ProductId = item.ProductId,
-                Quantity = request.Quantity,
-                CartCount = cart.Items.Count
+                ItemId = updated.Id,
+                ProductId = updated.ProductId,
+                ProductName = updated.Product?.Name ?? "Unknown",
+                ProductImage = FormatImageUrl(updated.Product?.ImageUrl),
+                Price = updated.Product?.Price ?? 0,
+                Quantity = updated.Quantity,
+                Subtotal = (updated.Product?.Price ?? 0) * updated.Quantity
             };
 
-            return ApiResponse<CartItemDto>.SuccessResponse(response, "Cart item updated successfully.");
+            return ApiResponse<CartItemDto>.SuccessResponse(dto, "Cart item updated successfully.");
         }
 
         public async Task<ApiResponse<bool>> RemoveFromCartAsync(int userId, int itemId)
@@ -92,10 +102,13 @@ namespace ElectroKart_Api.Services.Cart
 
             var items = cart.Items.Select(i => new CartItemDto
             {
-                Id = i.Id,
+                ItemId = i.Id,
                 ProductId = i.ProductId,
+                ProductName = i.Product?.Name ?? "Unknown",
+                ProductImage = FormatImageUrl(i.Product?.ImageUrl),
+                Price = i.Product?.Price ?? 0,
                 Quantity = i.Quantity,
-                CartCount = cart.Items.Count
+                Subtotal = (i.Product?.Price ?? 0) * i.Quantity
             }).ToList();
 
             return ApiResponse<List<CartItemDto>>.SuccessResponse(items, "Cart fetched successfully.");
@@ -112,6 +125,16 @@ namespace ElectroKart_Api.Services.Cart
                 throw new BadRequestException("Cart is already empty.");
 
             return ApiResponse<bool>.SuccessResponse(true, "Cart cleared successfully.");
+        }
+
+        private string FormatImageUrl(string? imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl))
+                return string.Empty;
+
+            return imageUrl.StartsWith("http", System.StringComparison.OrdinalIgnoreCase)
+                ? imageUrl
+                : $"{_baseUrl}/{imageUrl.TrimStart('/')}";
         }
     }
 }

@@ -1,10 +1,10 @@
 ﻿using ElectroKart_Api.Data;
 using ElectroKart_Api.Models;
 using Microsoft.EntityFrameworkCore;
-using WishlistModel = ElectroKart_Api.Models.Wishlist;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WishlistModel = ElectroKart_Api.Models.Wishlist;
 
 namespace ElectroKart_Api.Repositories.Wishlist
 {
@@ -28,20 +28,25 @@ namespace ElectroKart_Api.Repositories.Wishlist
         public async Task<WishlistModel> CreateWishlistAsync(int userId)
         {
             var wishlist = new WishlistModel { UserId = userId };
-            await _context.Wishlists.AddAsync(wishlist);
+            _context.Wishlists.Add(wishlist);
             await _context.SaveChangesAsync();
             return wishlist;
         }
 
         public async Task AddItemAsync(int wishlistId, int productId)
         {
+            var exists = await _context.WishlistItems
+                .AnyAsync(i => i.WishlistId == wishlistId && i.ProductId == productId);
+
+            if (exists) return;
+
             var wishlistItem = new WishlistItem
             {
                 WishlistId = wishlistId,
                 ProductId = productId
             };
 
-            await _context.WishlistItems.AddAsync(wishlistItem);
+            _context.WishlistItems.Add(wishlistItem);
             await _context.SaveChangesAsync();
         }
 
@@ -62,10 +67,10 @@ namespace ElectroKart_Api.Repositories.Wishlist
 
         public async Task<bool> DeleteWishlistItemByProductIdAsync(int userId, int productId)
         {
-            var wishlist = await GetWishlistByUserIdAsync(userId);
-            if (wishlist == null) return false;
+            var item = await _context.WishlistItems
+                .Include(i => i.Wishlist)
+                .FirstOrDefaultAsync(i => i.Wishlist.UserId == userId && i.ProductId == productId);
 
-            var item = wishlist.Items.FirstOrDefault(i => i.ProductId == productId);
             if (item == null) return false;
 
             _context.WishlistItems.Remove(item);

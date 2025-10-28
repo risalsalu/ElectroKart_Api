@@ -1,7 +1,7 @@
 ﻿using ElectroKart_Api.Models;
-using WishlistModel = ElectroKart_Api.Models.Wishlist;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using WishlistModel = ElectroKart_Api.Models.Wishlist;
 
 namespace ElectroKart_Api.Repositories.Wishlist
 {
@@ -12,7 +12,6 @@ namespace ElectroKart_Api.Repositories.Wishlist
         Task AddItemAsync(int wishlistId, int productId);
         Task<bool> ItemExistsAsync(int wishlistId, int productId);
         Task<IEnumerable<WishlistItem>> GetAllWishlistItemsAsync(int userId);
-
         Task<bool> DeleteWishlistItemByProductIdAsync(int userId, int productId);
     }
 }

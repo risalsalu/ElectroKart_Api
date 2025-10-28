@@ -137,18 +137,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
-
 app.UseHttpsRedirection();
-
 app.UseRouting();
-
 app.UseCors("AllowFrontend");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.UseMiddleware<RoleAuthorizationMiddleware>();
-
 app.MapControllers();
-
 app.Run();
