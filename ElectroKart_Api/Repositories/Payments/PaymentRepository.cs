@@ -24,12 +24,16 @@ namespace ElectroKart_Api.Repositories.Payments
 
         public async Task<Payment?> GetPaymentByPaymentIdAsync(string paymentId)
         {
-            return await _context.Payments.FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+            return await _context.Payments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
         }
 
         public async Task<Payment?> GetPaymentByOrderIdAsync(int orderId)
         {
-            return await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+            return await _context.Payments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.OrderId == orderId);
         }
 
         public async Task UpdatePaymentStatusAsync(Payment payment, string status)

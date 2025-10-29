@@ -57,10 +57,10 @@ namespace ElectroKart_Api.Services.Admin
             var totalProducts = await _context.Products.CountAsync();
             var totalUsers = await _context.Users.CountAsync();
             var totalOrders = await _context.Orders.CountAsync();
-
             var totalRevenue = await _context.Orders
                 .Where(o => o.Status == OrderStatus.Paid || o.Status == OrderStatus.Delivered)
-                .SumAsync(o => o.TotalAmount ?? 0);
+                .SumAsync(o => o.TotalAmount);
+
 
             var pending = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending);
             var shipped = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Shipped);

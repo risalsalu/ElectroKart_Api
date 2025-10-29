@@ -5,7 +5,7 @@ namespace ElectroKart_Api.DTOs.Payments
     public class CreatePaymentRequestDto
     {
         [Required]
-        public int OrderId { get; set; }
+        public string OrderId { get; set; } = string.Empty;
 
         [Required]
         public decimal Amount { get; set; }

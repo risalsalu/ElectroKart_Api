@@ -61,6 +61,7 @@ namespace ElectroKart_Api.Repositories.Orders
         {
             var order = await _context.Orders
                 .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order == null) return false;

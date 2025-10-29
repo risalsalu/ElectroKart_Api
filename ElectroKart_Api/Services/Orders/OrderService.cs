@@ -32,6 +32,9 @@ namespace ElectroKart_Api.Services.Orders
 
             foreach (var dtoItem in dto.Items)
             {
+                if (dtoItem.ProductId <= 0)
+                    throw new ArgumentException($"Invalid product ID: {dtoItem.ProductId}");
+
                 var product = await _context.Products.FindAsync(dtoItem.ProductId)
                     ?? throw new KeyNotFoundException($"Product ID {dtoItem.ProductId} not found.");
 
@@ -68,7 +71,6 @@ namespace ElectroKart_Api.Services.Orders
         {
             var orders = await _orderRepository.GetOrdersByUserIdAsync(userId);
             var dtos = orders.Select(MapOrderToDto).ToList();
-
             return ApiResponse<List<OrderResponseDto>>.SuccessResponse(dtos, "Orders fetched successfully");
         }
 
@@ -98,7 +100,6 @@ namespace ElectroKart_Api.Services.Orders
                 throw new ArgumentException("Invalid status value.");
 
             await _orderRepository.UpdateOrderStatusAsync(order, newStatus);
-
             return ApiResponse<bool>.SuccessResponse(true, "Order status updated successfully");
         }
 
@@ -106,7 +107,6 @@ namespace ElectroKart_Api.Services.Orders
         {
             var orders = await _orderRepository.GetAllOrdersAsync();
             var dtos = orders.Select(MapOrderToDto).ToList();
-
             return ApiResponse<List<OrderResponseDto>>.SuccessResponse(dtos, "All orders fetched successfully");
         }
 
@@ -130,13 +130,14 @@ namespace ElectroKart_Api.Services.Orders
                 UserId = order.UserId,
                 ShippingAddress = order.ShippingAddress,
                 PaymentMethod = order.PaymentMethod,
-                TotalAmount = order.TotalAmount.GetValueOrDefault(),
+                TotalAmount = order.TotalAmount,
                 Status = order.Status.ToString(),
                 CreatedAt = order.CreatedAt,
                 Items = order.Items.Select(i => new OrderItemResponseDto
                 {
                     ProductId = i.ProductId,
                     ProductName = i.Product?.Name ?? string.Empty,
+                    ProductImage = i.Product?.ImageUrl ?? string.Empty,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice
                 }).ToList()

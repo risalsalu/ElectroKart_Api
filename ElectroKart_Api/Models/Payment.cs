@@ -30,6 +30,7 @@ namespace ElectroKart_Api.Models
         [Required, MaxLength(50)]
         public string Status { get; set; } = "Pending";
 
+        [Required]
         public int UserId { get; set; }
 
         [ForeignKey("UserId")]
