@@ -5,7 +5,7 @@
 namespace ElectroKart_Api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUserFields : Migration
+    public partial class InitialHosting : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -13,6 +13,7 @@ namespace ElectroKart_Api.Migrations
 
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
 

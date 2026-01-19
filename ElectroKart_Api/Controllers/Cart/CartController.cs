@@ -49,7 +49,7 @@ namespace ElectroKart_Api.Controllers.Cart
                 ProductId = item.ProductId,
                 ProductName = item.ProductName ?? "Unknown Product",
                 ProductImage = item.ProductImage ?? string.Empty,
-                Price = item.Price, // Must not be null
+                Price = item.Price, 
                 Quantity = item.Quantity,
                 Subtotal = item.Price * item.Quantity
             }).ToList();

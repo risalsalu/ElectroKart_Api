@@ -14,7 +14,6 @@ namespace ElectroKart_Api.Repositories.Cart
             _context = context;
         }
 
-        // ✅ FIXED: Include product details when getting user cart
         public async Task<CartModel?> GetCartByUserIdAsync(int userId)
         {
             return await _context.Carts

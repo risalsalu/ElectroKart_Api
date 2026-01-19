@@ -1,12 +1,10 @@
 ﻿using ElectroKart_Api.Data;
 using ElectroKart_Api.Helpers;
-using ElectroKart_Api.Repositories.GenericRepo;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ElectroKart_Api.Repositories
+namespace ElectroKart_Api.Repositories.GenericRepo
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
@@ -21,77 +19,43 @@ namespace ElectroKart_Api.Repositories
 
         public async Task<ApiResponse<T>> AddAsync(T entity)
         {
-            try
-            {
-                await _dbSet.AddAsync(entity);
-                await _context.SaveChangesAsync();
-                return ApiResponse<T>.SuccessResponse(entity, $"{typeof(T).Name} added successfully");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<T>.FailureResponse($"{typeof(T).Name} add failed", ex.Message);
-            }
+            await _dbSet.AddAsync(entity);
+            await _context.SaveChangesAsync();
+            return ApiResponse<T>.SuccessResponse(entity, $"{typeof(T).Name} added successfully");
         }
 
         public async Task<ApiResponse<T>> UpdateAsync(T entity)
         {
-            try
-            {
-                _dbSet.Update(entity);
-                await _context.SaveChangesAsync();
-                return ApiResponse<T>.SuccessResponse(entity, $"{typeof(T).Name} updated successfully");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<T>.FailureResponse($"{typeof(T).Name} update failed", ex.Message);
-            }
+            _dbSet.Update(entity);
+            await _context.SaveChangesAsync();
+            return ApiResponse<T>.SuccessResponse(entity, $"{typeof(T).Name} updated successfully");
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(int id)
         {
-            try
-            {
-                var entity = await _dbSet.FindAsync(id);
-                if (entity == null)
-                    return ApiResponse<bool>.FailureResponse($"{typeof(T).Name} not found");
+            var entity = await _dbSet.FindAsync(id);
+            if (entity == null)
+                throw new KeyNotFoundException($"{typeof(T).Name} not found");
 
-                _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
-                return ApiResponse<bool>.SuccessResponse(true, $"{typeof(T).Name} deleted successfully");
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<bool>.FailureResponse($"{typeof(T).Name} delete failed", ex.Message);
-            }
+            _dbSet.Remove(entity);
+            await _context.SaveChangesAsync();
+            return ApiResponse<bool>.SuccessResponse(true, $"{typeof(T).Name} deleted successfully");
         }
 
         public async Task<ApiResponse<T?>> GetByIdAsync(int id)
         {
-            try
-            {
-                var entity = await _dbSet.FindAsync(id);
-                if (entity == null)
-                    return ApiResponse<T?>.FailureResponse($"{typeof(T).Name} not found");
+            var entity = await _dbSet.FindAsync(id);
+            if (entity == null)
+                throw new KeyNotFoundException($"{typeof(T).Name} not found");
 
-                return ApiResponse<T?>.SuccessResponse(entity);
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<T?>.FailureResponse($"{typeof(T).Name} fetch failed", ex.Message);
-            }
+            return ApiResponse<T?>.SuccessResponse(entity);
         }
 
         public async Task<ApiResponse<IEnumerable<T>>> GetAllAsync()
         {
-            try
-            {
-                var list = await _dbSet.ToListAsync();
-                return ApiResponse<IEnumerable<T>>.SuccessResponse(list);
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<IEnumerable<T>>.FailureResponse($"{typeof(T).Name} fetch failed", ex.Message);
-            }
+            var list = await _dbSet.ToListAsync();
+            return ApiResponse<IEnumerable<T>>.SuccessResponse(list);
         }
     }
 }
+    
